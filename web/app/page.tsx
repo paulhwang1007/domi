@@ -1,114 +1,136 @@
 
-'use client'
+import Link from "next/link";
+import { ArrowRight, Check, LayoutDashboard, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Plus, Search, Settings, Loader2 } from 'lucide-react'
-
-// Mock Data for MVP
-const MOCK_CLIPS = [
-  { id: 1, type: 'image', title: 'Neon City', src: 'https://images.unsplash.com/photo-1514525253440-b393452e8d2e?auto=format&fit=crop&w=500&q=80', tags: ['Inspiration', 'Cyberpunk'] },
-  { id: 2, type: 'text', title: 'Design Principles', content: 'Good design is as little design as possible.', tags: ['Quotes', 'Design'] },
-  { id: 3, type: 'url', title: 'Next.js Documentation', src: 'https://nextjs.org', description: 'The React Framework for the Web', tags: ['Dev', 'Docs'] },
-  { id: 4, type: 'image', title: 'Abstract Shapes', src: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=500&q=80', tags: ['Art', '3D'] },
-  { id: 5, type: 'text', title: 'Todo List', content: '- Buy milk\n- Walk dog\n- Code Domi', tags: ['Personal'] },
-]
-
-export default function Dashboard() {
-  const [user, setUser] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const supabase = createClient()
-  const router = useRouter()
-
-  useEffect(() => {
-    const checkUser = async () => {
-        // For MVP demo, you might want to bypass auth check if no keys
-        // But let's try real check
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) {
-            // router.push('/login') 
-            // Commented out to allow viewing dashboard without auth for MVP demo if needed
-            // But strict MVP says Auth is required.
-            // Let's redirect if not user.
-            router.push('/login')
-        } else {
-            setUser(user)
-        }
-        setLoading(false)
-    }
-    checkUser()
-  }, [])
-
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>
-
+export default function LandingPage() {
   return (
-    <div className="min-h-screen p-6 md:p-8">
-      {/* Header */}
-      <header className="flex items-center justify-between mb-8 sticky top-0 z-50 bg-background/50 backdrop-blur-md py-4 -mx-6 px-6 border-b border-white/5">
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">Domi</h1>
-          
-          <div className="hidden md:flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-3 py-1.5 hover:bg-white/10 transition-colors cursor-text w-64">
-            <Search className="w-4 h-4 text-zinc-500" />
-            <input type="text" placeholder="Search your mind..." className="bg-transparent border-none outline-none text-sm text-white placeholder-zinc-500 w-full" />
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-            <button className="p-2 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors">
-                <Settings className="w-5 h-5" />
-            </button>
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 border border-white/20" />
-        </div>
-      </header>
-
-      {/* Masonry Feed (Simulated with Columns for now) */}
-      <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
-        {MOCK_CLIPS.map((clip) => (
-          <div key={clip.id} className="break-inside-avoid mb-6 group">
-            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 cursor-pointer">
-              
-              {clip.type === 'image' && (
-                <div className="relative">
-                   <img src={clip.src} alt={clip.title} className="w-full h-auto object-cover" />
-                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-                </div>
-              )}
-              
-              {clip.type === 'text' && (
-                  <div className="p-6 bg-gradient-to-br from-indigo-500/10 to-transparent">
-                      <p className="font-serif text-lg text-white/90 leading-relaxed">"{clip.content}"</p>
-                  </div>
-              )}
-
-              {clip.type === 'url' && (
-                  <div className="h-32 bg-zinc-900 flex items-center justify-center text-zinc-600">
-                      <span className="text-4xl font-bold opacity-20">URL</span>
-                  </div>
-              )}
-
-              <div className="p-4">
-                <h3 className="font-medium text-white mb-2 group-hover:text-indigo-400 transition-colors">{clip.title}</h3>
-                {clip.description && <p className="text-xs text-zinc-500 mb-3">{clip.description}</p>}
-                
-                <div className="flex flex-wrap gap-2">
-                    {clip.tags.map(tag => (
-                        <span key={tag} className="text-[10px] uppercase tracking-wider font-semibold text-zinc-500 bg-white/5 px-2 py-1 rounded-md">{tag}</span>
-                    ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-
-        {/* Add Card */}
-        <div className="break-inside-avoid mb-6 border-2 border-dashed border-white/10 rounded-2xl p-8 flex flex-col items-center justify-center text-zinc-500 hover:text-white hover:border-white/20 hover:bg-white/5 transition-all cursor-pointer h-64">
-            <Plus className="w-8 h-8 mb-2" />
-            <span className="text-sm font-medium">Add new memory</span>
-        </div>
+    <div className="min-h-screen bg-[#0E0C25] text-white selection:bg-indigo-500/30">
+      {/* Dynamic Background */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        {/* Top Left Glow */}
+        <div className="absolute top-[-20%] left-[-10%] w-[1000px] h-[1000px] bg-indigo-600/20 rounded-full blur-[120px] opacity-40 animate-pulse-slow" />
+        {/* Bottom Right Glow */}
+        <div className="absolute bottom-[-20%] right-[-10%] w-[800px] h-[800px] bg-blue-600/10 rounded-full blur-[120px] opacity-30" />
       </div>
+
+      {/* Navbar */}
+      <nav className="relative z-50 flex items-center justify-between px-6 py-6 md:px-12 max-w-7xl mx-auto">
+        <div className="flex items-center gap-2">
+          {/* Logo Icon */}
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-blue-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+            <LayoutDashboard className="text-white w-4 h-4" />
+          </div>
+          <span className="font-bold text-xl tracking-tight">Domi</span>
+        </div>
+
+        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-300">
+          <Link href="#features" className="hover:text-white transition-colors">Features</Link>
+          <Link href="#how-it-works" className="hover:text-white transition-colors">How it works</Link>
+          <Link href="#pricing" className="hover:text-white transition-colors">Pricing</Link>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <Link href="/login" className="text-sm font-medium text-zinc-300 hover:text-white transition-colors">
+            Log in
+          </Link>
+          <Link href="/login" className="text-sm font-medium bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-full transition-all shadow-lg shadow-indigo-600/25">
+            Get started
+          </Link>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <main className="relative z-10 flex flex-col items-center justify-center pt-24 pb-32 px-4 text-center max-w-5xl mx-auto">
+        
+        {/* Hero Badge */}
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-indigo-300 mb-8 backdrop-blur-sm">
+          <Sparkles className="w-3 h-3" />
+          <span>Domi 1.0 is now live</span>
+        </div>
+
+        <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8 leading-[1.1]">
+          The AI-Powered Memory <br className="hidden md:block" />
+          for the <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-indigo-400 to-blue-400">Web</span>
+        </h1>
+        
+        <p className="text-lg md:text-xl text-zinc-400 max-w-2xl mb-12 leading-relaxed">
+          Capture anything, organize effortlessly, and retrieve instantly with AI-powered context. The second brain designed for your digital life.
+        </p>
+
+        {/* CTA Input - Inspired by Circle */}
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-md">
+           <Link href="/login" className="w-full">
+            <button className="w-full bg-[#5d5dff] hover:bg-[#4b4be6] text-white font-semibold h-12 px-6 rounded-lg transition-all shadow-[0_0_40px_-10px_rgba(93,93,255,0.5)] flex items-center justify-center gap-2 text-[15px]">
+                Get started for free
+            </button>
+           </Link>
+        </div>
+        
+        <p className="mt-4 text-xs text-zinc-500">No credit card required • Free plan available</p>
+
+        {/* Curved Line Graphic Section */}
+        <div className="w-full max-w-6xl mt-32 relative">
+             {/* Gradient Curve SVG - Representing flow */}
+             <svg className="w-full h-[200px] md:h-[400px] overflow-visible" viewBox="0 0 1000 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+                {/* Glow/Blur filter def */}
+                <defs>
+                   <linearGradient id="line-gradient" x1="0" y1="0" x2="1000" y2="0" gradientUnits="userSpaceOnUse">
+                      <stop stopColor="#6EE7B7" /> {/* Teal/Green like 'Start' */}
+                      <stop offset="0.33" stopColor="#A855F7" /> {/* Purple like 'Engage' */}
+                      <stop offset="0.66" stopColor="#F472B6" /> {/* Pink like 'Monetize' */}
+                      <stop offset="1" stopColor="#3B82F6" /> {/* Blue like 'Scale' */}
+                   </linearGradient>
+                </defs>
+                
+                {/* The Path */}
+                <path 
+                  d="M0 250 C 250 250, 400 150, 500 100 S 800 50, 1000 0" 
+                  stroke="url(#line-gradient)" 
+                  strokeWidth="4" 
+                  filter="drop-shadow(0 0 8px rgba(168, 85, 247, 0.4))"
+                  className="opacity-80"
+                />
+
+                {/* Nodes on the path */}
+                {/* Start Node */}
+                <circle cx="100" cy="245" r="8" fill="#6EE7B7" className="animate-pulse" />
+                <circle cx="100" cy="245" r="16" fill="#6EE7B7" fillOpacity="0.2" />
+
+                {/* Engage Node */}
+                 <circle cx="450" cy="120" r="8" fill="#A855F7" />
+                 <circle cx="450" cy="120" r="16" fill="#A855F7" fillOpacity="0.2" />
+
+                 {/* Scale Node */}
+                 <circle cx="800" cy="40" r="8" fill="#3B82F6" />
+                 <circle cx="800" cy="40" r="16" fill="#3B82F6" fillOpacity="0.2" />
+             </svg>
+
+             {/* Text Labels aligned roughly with nodes */}
+             <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+                <div className="absolute left-[5%] bot-[10%] md:top-[65%] text-left max-w-[200px]">
+                    <h3 className="text-2xl font-bold text-white mb-2">Capture</h3>
+                    <p className="text-sm text-zinc-400">Save images, text, and pages instantly with one click.</p>
+                </div>
+
+                <div className="absolute left-[40%] top-[25%] md:top-[30%] text-left max-w-[200px]">
+                    <h3 className="text-2xl font-bold text-white mb-2">Organize</h3>
+                    <p className="text-sm text-zinc-400">AI automatically tags and categorizes your content.</p>
+                </div>
+
+                <div className="absolute right-[10%] top-[0%] md:top-[5%] text-left max-w-[200px]">
+                    <h3 className="text-2xl font-bold text-white mb-2">Retrieve</h3>
+                    <p className="text-sm text-zinc-400">Find anything with semantic search and context.</p>
+                </div>
+             </div>
+        </div>
+
+      </main>
+      
+      {/* Footer Simple */}
+      <footer className="border-t border-white/5 mt-20 py-12 text-center text-zinc-500 text-sm">
+        <p>&copy; {new Date().getFullYear()} Domi Inc. Curated by You.</p>
+      </footer>
     </div>
-  )
+  );
 }
