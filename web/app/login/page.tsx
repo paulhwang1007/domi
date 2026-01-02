@@ -11,6 +11,7 @@ import { LayoutDashboard, Loader2, ArrowRight } from 'lucide-react'
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [name, setName] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isSignUp, setIsSignUp] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -27,6 +28,11 @@ export default function LoginPage() {
         const { error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            data: {
+              full_name: name,
+            },
+          },
         })
         if (error) throw error
         // Auto sign in or show message
@@ -75,6 +81,20 @@ export default function LoginPage() {
         </button>
 
         <form onSubmit={handleAuth} className="w-full space-y-5">
+          {isSignUp && (
+            <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-300">
+                <label className="text-xs font-medium text-zinc-400 ml-1">Full Name</label>
+                <input
+                type="text"
+                placeholder="Example User"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all font-medium"
+                required={isSignUp}
+                />
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-zinc-400 ml-1">Email</label>
             <input
