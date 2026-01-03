@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Search, Settings, Loader2, LogOut, User, X, ExternalLink, Copy, Check, Pencil, Link as LinkIcon, Image as ImageIcon, StickyNote, FileText, Upload, LayoutGrid, Folder, ChevronRight } from 'lucide-react'
+import { Plus, Search, Settings, Loader2, LogOut, User, X, ExternalLink, Copy, Check, Pencil, Link as LinkIcon, Image as ImageIcon, StickyNote, FileText, Upload, LayoutGrid, Folder, ChevronRight, ImageOff } from 'lucide-react'
 
 // Mock Data for MVP
 const MOCK_CLIPS = [
@@ -40,6 +40,10 @@ export default function Dashboard() {
   const [selectedClip, setSelectedClip] = useState<any>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [editForm, setEditForm] = useState({ title: '', description: '', tags: '', groupId: '' })
+  
+  // Image Error State
+  const [failedImages, setFailedImages] = useState<Set<number>>(new Set())
+  const [modalImageError, setModalImageError] = useState(false)
   
   // Add Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
@@ -300,13 +304,25 @@ export default function Dashboard() {
             </div>
         ) : (
             filteredClips.map((clip) => (
-            <div key={clip.id} className="break-inside-avoid mb-6 group" onClick={() => { setSelectedClip(clip); setIsEditing(false); setEditForm({ title: clip.title, description: clip.description || '', tags: clip.tags.join(', '), groupId: clip.groupId || '' }) }}>
+            <div key={clip.id} className="break-inside-avoid mb-6 group" onClick={() => { setSelectedClip(clip); setModalImageError(false); setIsEditing(false); setEditForm({ title: clip.title, description: clip.description || '', tags: clip.tags.join(', '), groupId: clip.groupId || '' }) }}>
                 <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 cursor-pointer">
                 
                 {clip.type === 'image' && (
                     <div className="relative">
-                    <img src={clip.src} alt={clip.title} className="w-full h-auto object-cover" />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                        {failedImages.has(clip.id) ? (
+                            <div className="w-full aspect-video bg-white/5 flex flex-col items-center justify-center text-zinc-600">
+                                <ImageOff className="w-8 h-8 mb-2 opacity-50" />
+                                <span className="text-xs font-medium">Image not found</span>
+                            </div>
+                        ) : (
+                            <img 
+                                src={clip.src} 
+                                alt={clip.title} 
+                                className="w-full h-auto object-cover" 
+                                onError={() => setFailedImages(prev => new Set(prev).add(clip.id))}
+                            />
+                        )}
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                     </div>
                 )}
                 
@@ -372,7 +388,18 @@ export default function Dashboard() {
 
                 <div className="w-full md:w-3/5 bg-black/40 flex items-center justify-center p-8 border-b md:border-b-0 md:border-r border-white/5 relative overflow-hidden">
                      {selectedClip.type === 'image' && (
-                        <img src={selectedClip.src} className="w-full h-full object-contain shadow-2xl rounded-lg" />
+                        modalImageError ? (
+                            <div className="flex flex-col items-center justify-center text-zinc-600">
+                                <ImageOff className="w-16 h-16 mb-4 opacity-50" />
+                                <p className="text-lg font-medium text-zinc-500">Failed to load image</p>
+                            </div>
+                        ) : (
+                           <img 
+                               src={selectedClip.src} 
+                               className="w-full h-full object-contain shadow-2xl rounded-lg" 
+                               onError={() => setModalImageError(true)}
+                           />
+                        )
                      )}
                      
                      {selectedClip.type === 'text' && (
