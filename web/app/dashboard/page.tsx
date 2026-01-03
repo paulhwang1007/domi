@@ -20,7 +20,10 @@ export default function Dashboard() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+
   const [clips, setClips] = useState(MOCK_CLIPS)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
   const [selectedClip, setSelectedClip] = useState<any>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [editForm, setEditForm] = useState({ title: '', description: '', tags: '' })
@@ -96,11 +99,40 @@ export default function Dashboard() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+
   const handleSignOut = async () => {
       await supabase.auth.signOut()
       router.push('/')
       router.refresh()
   }
+
+  // Debouce Search Query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+        setDebouncedSearchQuery(searchQuery)
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  const filteredClips = clips.filter(clip => {
+      if (!debouncedSearchQuery) return true
+      const query = debouncedSearchQuery.toLowerCase()
+      
+      // Tag Search
+      if (query.startsWith('#')) {
+          const tagQuery = query.slice(1)
+          return clip.tags.some(tag => tag.toLowerCase().includes(tagQuery))
+      }
+
+      // Universal Search
+      return (
+          clip.title.toLowerCase().includes(query) ||
+          (clip.description && clip.description.toLowerCase().includes(query)) ||
+          (clip.type === 'text' && clip.content?.toLowerCase().includes(query)) ||
+          clip.tags.some(tag => tag.toLowerCase().includes(query))
+      )
+  })
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>
 
@@ -113,9 +145,15 @@ export default function Dashboard() {
             <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">Domi</h1>
           </Link>
           
-          <div className="hidden md:flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-3 py-1.5 hover:bg-white/10 transition-colors cursor-text w-64">
+          <div className="hidden md:flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-3 py-1.5 hover:bg-white/10 transition-colors cursor-text w-64 focus-within:ring-2 focus-within:ring-indigo-500/50 focus-within:border-transparent">
             <Search className="w-4 h-4 text-zinc-500" />
-            <input type="text" placeholder="Search your mind..." className="bg-transparent border-none outline-none text-sm text-white placeholder-zinc-500 w-full" />
+            <input 
+                type="text" 
+                placeholder="Search your mind..." 
+                className="bg-transparent border-none outline-none text-sm text-white placeholder-zinc-500 w-full" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
         </div>
 
@@ -154,49 +192,58 @@ export default function Dashboard() {
       </header>
 
       {/* Masonry Feed (Simulated with Columns for now) */}
+      {/* Masonry Feed (Simulated with Columns for now) */}
       <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
-        {clips.map((clip) => (
-          <div key={clip.id} className="break-inside-avoid mb-6 group" onClick={() => { setSelectedClip(clip); setIsEditing(false); setEditForm({ title: clip.title, description: clip.description || '', tags: clip.tags.join(', ') }) }}>
-            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 cursor-pointer">
-              
-              {clip.type === 'image' && (
-                <div className="relative">
-                   <img src={clip.src} alt={clip.title} className="w-full h-auto object-cover" />
-                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-                </div>
-              )}
-              
-              {clip.type === 'text' && (
-                  <div className="p-6 bg-gradient-to-br from-indigo-500/10 to-transparent">
-                      <p className="font-serif text-lg text-white/90 leading-relaxed">"{clip.content}"</p>
-                  </div>
-              )}
-
-              {clip.type === 'url' && (
-                  <div className="h-32 bg-zinc-900 flex items-center justify-center text-zinc-600">
-                      <span className="text-4xl font-bold opacity-20">URL</span>
-                  </div>
-              )}
-
-              {clip.type === 'pdf' && (
-                  <div className="h-32 bg-red-500/10 flex items-center justify-center text-red-500/50">
-                      <FileText className="w-12 h-12" />
-                  </div>
-              )}
-
-              <div className="p-4">
-                <h3 className="font-medium text-white mb-2 group-hover:text-indigo-400 transition-colors">{clip.title}</h3>
-                {clip.description && <p className="text-xs text-zinc-500 mb-3">{clip.description}</p>}
-                
-                <div className="flex flex-wrap gap-2">
-                    {clip.tags.map(tag => (
-                        <span key={tag} className="text-[10px] uppercase tracking-wider font-semibold text-zinc-500 bg-white/5 px-2 py-1 rounded-md">{tag}</span>
-                    ))}
-                </div>
-              </div>
+        {filteredClips.length === 0 ? (
+            <div className="col-span-full h-64 flex flex-col items-center justify-center text-zinc-500 animate-in fade-in duration-300">
+                <Search className="w-12 h-12 mb-4 opacity-50" />
+                <p className="text-lg font-medium text-white/50">No memories found for "{debouncedSearchQuery}"</p>
+                <p className="text-sm">Try a different keyword or tag</p>
             </div>
-          </div>
-        ))}
+        ) : (
+            filteredClips.map((clip) => (
+            <div key={clip.id} className="break-inside-avoid mb-6 group" onClick={() => { setSelectedClip(clip); setIsEditing(false); setEditForm({ title: clip.title, description: clip.description || '', tags: clip.tags.join(', ') }) }}>
+                <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 cursor-pointer">
+                
+                {clip.type === 'image' && (
+                    <div className="relative">
+                    <img src={clip.src} alt={clip.title} className="w-full h-auto object-cover" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                    </div>
+                )}
+                
+                {clip.type === 'text' && (
+                    <div className="p-6 bg-gradient-to-br from-indigo-500/10 to-transparent">
+                        <p className="font-serif text-lg text-white/90 leading-relaxed">"{clip.content}"</p>
+                    </div>
+                )}
+
+                {clip.type === 'url' && (
+                    <div className="h-32 bg-zinc-900 flex items-center justify-center text-zinc-600">
+                        <span className="text-4xl font-bold opacity-20">URL</span>
+                    </div>
+                )}
+
+                {clip.type === 'pdf' && (
+                    <div className="h-32 bg-red-500/10 flex items-center justify-center text-red-500/50">
+                        <FileText className="w-12 h-12" />
+                    </div>
+                )}
+
+                <div className="p-4">
+                    <h3 className="font-medium text-white mb-2 group-hover:text-indigo-400 transition-colors">{clip.title}</h3>
+                    {clip.description && <p className="text-xs text-zinc-500 mb-3">{clip.description}</p>}
+                    
+                    <div className="flex flex-wrap gap-2">
+                        {clip.tags.map(tag => (
+                            <span key={tag} className="text-[10px] uppercase tracking-wider font-semibold text-zinc-500 bg-white/5 px-2 py-1 rounded-md">{tag}</span>
+                        ))}
+                    </div>
+                </div>
+                </div>
+            </div>
+            ))
+        )}
 
         {/* Add Card */}
         <div 
