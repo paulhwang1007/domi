@@ -1,11 +1,11 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Search, Settings, Loader2 } from 'lucide-react'
+import { Plus, Search, Settings, Loader2, LogOut, User } from 'lucide-react'
 
 // Mock Data for MVP
 const MOCK_CLIPS = [
@@ -19,8 +19,10 @@ const MOCK_CLIPS = [
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [isProfileOpen, setIsProfileOpen] = useState(false)
   const supabase = createClient()
   const router = useRouter()
+  const profileRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const checkUser = async () => {
@@ -33,7 +35,22 @@ export default function Dashboard() {
         setLoading(false)
     }
     checkUser()
+
+    // Close dropdown on click outside
+    const handleClickOutside = (event: MouseEvent) => {
+        if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+            setIsProfileOpen(false)
+        }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  const handleSignOut = async () => {
+      await supabase.auth.signOut()
+      router.push('/')
+      router.refresh()
+  }
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>
 
@@ -56,7 +73,33 @@ export default function Dashboard() {
             <button className="p-2 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors">
                 <Settings className="w-5 h-5" />
             </button>
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 border border-white/20" />
+            
+            <div className="relative" ref={profileRef}>
+                <button 
+                    onClick={() => setIsProfileOpen(!isProfileOpen)}
+                    className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 border border-white/20 hover:scale-105 transition-transform flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-white/20"
+                >
+                    {!user?.user_metadata?.avatar_url && <User className="w-4 h-4 text-white/50" />}
+                </button>
+
+                {/* Dropdown Menu */}
+                {isProfileOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-[#0E0C25] border border-white/10 rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        <div className="p-3 border-b border-white/5">
+                            <p className="text-xs text-zinc-400 font-medium truncate">{user?.email}</p>
+                        </div>
+                        <div className="p-1">
+                            <button 
+                                onClick={handleSignOut}
+                                className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2"
+                            >
+                                <LogOut className="w-4 h-4" />
+                                Log out
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
       </header>
 

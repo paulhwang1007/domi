@@ -3,7 +3,12 @@ import Link from "next/link";
 import { ArrowRight, Check, LayoutDashboard, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export default function LandingPage() {
+import { createClient } from "@/lib/supabase/server";
+
+export default async function LandingPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   return (
     <div className="min-h-screen bg-[#0E0C25] text-white selection:bg-indigo-500/30">
       {/* Dynamic Background */}
@@ -31,12 +36,20 @@ export default function LandingPage() {
         </div>
 
         <div className="flex items-center gap-4">
-          <Link href="/login" className="text-sm font-medium text-zinc-300 hover:text-white transition-colors">
-            Log in
-          </Link>
-          <Link href="/login" className="text-sm font-medium bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-full transition-all shadow-lg shadow-indigo-600/25">
-            Get started
-          </Link>
+          {user ? (
+             <Link href="/dashboard" className="text-sm font-medium bg-white text-black hover:bg-zinc-200 px-5 py-2.5 rounded-full transition-all shadow-lg">
+                Go to Dashboard
+             </Link>
+          ) : (
+            <>
+              <Link href="/login" className="text-sm font-medium text-zinc-300 hover:text-white transition-colors">
+                Log in
+              </Link>
+              <Link href="/login" className="text-sm font-medium bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-full transition-all shadow-lg shadow-indigo-600/25">
+                Get started
+              </Link>
+            </>
+          )}
         </div>
       </nav>
 
@@ -60,11 +73,19 @@ export default function LandingPage() {
 
         {/* CTA Input - Inspired by Circle */}
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-md">
-           <Link href="/login" className="w-full">
-            <button className="w-full bg-[#5d5dff] hover:bg-[#4b4be6] text-white font-semibold h-12 px-6 rounded-lg transition-all shadow-[0_0_40px_-10px_rgba(93,93,255,0.5)] flex items-center justify-center gap-2 text-[15px]">
-                Get started for free
-            </button>
-           </Link>
+           {user ? (
+             <Link href="/dashboard" className="w-full">
+                <button className="w-full bg-white text-black hover:bg-zinc-200 font-semibold h-12 px-6 rounded-lg transition-all shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)] flex items-center justify-center gap-2 text-[15px]">
+                    Go to Dashboard <ArrowRight className="w-4 h-4" />
+                </button>
+             </Link>
+           ) : (
+             <Link href="/login" className="w-full">
+              <button className="w-full bg-[#5d5dff] hover:bg-[#4b4be6] text-white font-semibold h-12 px-6 rounded-lg transition-all shadow-[0_0_40px_-10px_rgba(93,93,255,0.5)] flex items-center justify-center gap-2 text-[15px]">
+                  Get started for free
+              </button>
+             </Link>
+           )}
         </div>
         
         <p className="mt-4 text-xs text-zinc-500">No credit card required • Free plan available</p>
