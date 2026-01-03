@@ -7,27 +7,15 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Plus, Search, Settings, Loader2, LogOut, User, X, ExternalLink, Copy, Check, Pencil, Link as LinkIcon, Image as ImageIcon, StickyNote, FileText, Upload, LayoutGrid, Folder, ChevronRight, ImageOff } from 'lucide-react'
 
-// Mock Data for MVP
-const MOCK_CLIPS = [
-  { id: 1, type: 'image', title: 'Neon City', src: 'https://images.unsplash.com/photo-1514525253440-b393452e8d2e?auto=format&fit=crop&w=500&q=80', tags: ['Inspiration', 'Cyberpunk'], groupId: 'g1' },
-  { id: 2, type: 'text', title: 'Design Principles', content: 'Good design is as little design as possible.', tags: ['Quotes', 'Design'], groupId: null },
-  { id: 3, type: 'url', title: 'Next.js Documentation', src: 'https://nextjs.org', description: 'The React Framework for the Web', tags: ['Dev', 'Docs'], groupId: 'g2' },
-  { id: 4, type: 'image', title: 'Abstract Shapes', src: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=500&q=80', tags: ['Art', '3D'], groupId: 'g1' },
-  { id: 5, type: 'text', title: 'Todo List', content: '- Buy milk\n- Walk dog\n- Code Domi', tags: ['Personal'], groupId: null },
-]
 
-const MOCK_GROUPS = [
-    { id: 'g1', title: 'Inspiration', color: 'indigo', count: 2 },
-    { id: 'g2', title: 'Development', color: 'emerald', count: 1 },
-]
 
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
 
-  const [clips, setClips] = useState(MOCK_CLIPS)
-  const [groups, setGroups] = useState(MOCK_GROUPS)
+  const [clips, setClips] = useState<any[]>([])
+  const [groups, setGroups] = useState<any[]>([])
   const [currentView, setCurrentView] = useState<'feed' | 'groups'>('feed')
   const [activeGroupFilter, setActiveGroupFilter] = useState<string | null>(null)
   
@@ -97,19 +85,6 @@ export default function Dashboard() {
       setIsAddModalOpen(false)
   }
 
-  const handleCreateGroup = () => {
-      if (!newGroupTitle.trim()) return
-      const newGroup = {
-          id: `g${groups.length + 1}`,
-          title: newGroupTitle,
-          color: ['indigo', 'emerald', 'purple', 'rose', 'orange'][Math.floor(Math.random() * 5)],
-          count: 0
-      }
-      setGroups([...groups, newGroup])
-      setNewGroupTitle('')
-      setIsGroupModalOpen(false)
-  }
-
   useEffect(() => {
     const checkUser = async () => {
         const { data: { user } } = await supabase.auth.getUser()
@@ -117,8 +92,8 @@ export default function Dashboard() {
             router.push('/login')
         } else {
             setUser(user)
+            fetchData()
         }
-        setLoading(false)
     }
     checkUser()
 
@@ -131,6 +106,44 @@ export default function Dashboard() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  const fetchData = async () => {
+      setLoading(true)
+      const [clipsRes, groupsRes] = await Promise.all([
+          supabase.from('clips').select('*').order('created_at', { ascending: false }),
+          supabase.from('groups').select('*').order('created_at', { ascending: false })
+      ])
+
+      const fetchedGroups = groupsRes.data || []
+      const fetchedClips = clipsRes.data || []
+
+      // Calculate counts manually for now
+      const groupsWithCounts = fetchedGroups.map(group => ({
+          ...group,
+          count: fetchedClips.filter((c: any) => c.group_id === group.id).length
+      }))
+
+      setClips(fetchedClips)
+      setGroups(groupsWithCounts)
+      setLoading(false)
+  }
+
+  const handleCreateGroup = async () => {
+    if (!newGroupTitle.trim()) return
+    const color = ['indigo', 'emerald', 'purple', 'rose', 'orange'][Math.floor(Math.random() * 5)]
+    
+    const { data, error } = await supabase.from('groups').insert({
+        title: newGroupTitle,
+        color: color,
+        user_id: user.id
+    }).select().single()
+
+    if (data) {
+        setGroups([{ ...data, count: 0 }, ...groups])
+        setNewGroupTitle('')
+        setIsGroupModalOpen(false)
+    }
+  }
 
 
   const handleSignOut = async () => {
@@ -150,7 +163,7 @@ export default function Dashboard() {
 
   const filteredClips = clips.filter(clip => {
       // Group Filter
-      if (activeGroupFilter && clip.groupId !== activeGroupFilter) {
+      if (activeGroupFilter && clip.group_id !== activeGroupFilter) {
           return false
       }
 
@@ -160,7 +173,7 @@ export default function Dashboard() {
       // Tag Search
       if (query.startsWith('#')) {
           const tagQuery = query.slice(1)
-          return clip.tags.some(tag => tag.toLowerCase().includes(tagQuery))
+          return clip.tags && clip.tags.some((tag: string) => tag.toLowerCase().includes(tagQuery))
       }
 
       // Universal Search
@@ -168,7 +181,7 @@ export default function Dashboard() {
           clip.title.toLowerCase().includes(query) ||
           (clip.description && clip.description.toLowerCase().includes(query)) ||
           (clip.type === 'text' && clip.content?.toLowerCase().includes(query)) ||
-          clip.tags.some(tag => tag.toLowerCase().includes(query))
+          (clip.tags && clip.tags.some((tag: string) => tag.toLowerCase().includes(query)))
       )
   })
 
@@ -326,7 +339,7 @@ export default function Dashboard() {
             </div>
         ) : (
             filteredClips.map((clip) => (
-            <div key={clip.id} className="break-inside-avoid mb-6 group" onClick={() => { setSelectedClip(clip); setModalImageError(false); setIsEditing(false); setEditForm({ title: clip.title, description: clip.description || '', tags: clip.tags.join(', '), groupId: clip.groupId || '' }) }}>
+            <div key={clip.id} className="break-inside-avoid mb-6 group" onClick={() => { setSelectedClip(clip); setModalImageError(false); setIsEditing(false); setEditForm({ title: clip.title || '', description: clip.description || '', tags: clip.tags ? clip.tags.join(', ') : '', groupId: clip.group_id || '' }) }}>
                 <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 cursor-pointer">
                 
                 {clip.type === 'image' && (
@@ -338,8 +351,8 @@ export default function Dashboard() {
                             </div>
                         ) : (
                             <img 
-                                src={clip.src} 
-                                alt={clip.title} 
+                                src={clip.src_url} 
+                                alt={clip.title || 'Clip'} 
                                 className="w-full h-auto object-cover" 
                                 onError={() => setFailedImages(prev => new Set(prev).add(clip.id))}
                             />
@@ -371,7 +384,7 @@ export default function Dashboard() {
                     {clip.description && <p className="text-xs text-zinc-500 mb-3">{clip.description}</p>}
                     
                     <div className="flex flex-wrap gap-2">
-                        {clip.tags.map(tag => (
+                        {clip.tags && clip.tags.map((tag: string) => (
                             <span key={tag} className="text-[10px] uppercase tracking-wider font-semibold text-zinc-500 bg-white/5 px-2 py-1 rounded-md">{tag}</span>
                         ))}
                     </div>
@@ -423,7 +436,7 @@ export default function Dashboard() {
                             </div>
                         ) : (
                            <img 
-                               src={selectedClip.src} 
+                               src={selectedClip.src_url} 
                                className="w-full h-full object-contain shadow-2xl rounded-lg" 
                                onError={() => setModalImageError(true)}
                            />
@@ -441,15 +454,15 @@ export default function Dashboard() {
                              <div className="w-32 h-32 rounded-2xl bg-zinc-800 flex items-center justify-center mb-6 mx-auto">
                                 <span className="text-4xl font-bold text-zinc-600">URL</span>
                              </div>
-                             <a href={selectedClip.src} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-4 text-lg">
-                                 {selectedClip.src}
+                             <a href={selectedClip.src_url} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-4 text-lg">
+                                 {selectedClip.src_url}
                              </a>
                          </div>
                      )}
 
                      {selectedClip.type === 'pdf' && (
                         <iframe 
-                            src={selectedClip.src} 
+                            src={selectedClip.src_url} 
                             className="w-full h-full rounded-xl shadow-2xl border-none bg-white"
                             title="PDF Preview"
                         />
@@ -516,10 +529,10 @@ export default function Dashboard() {
                                     <span className="inline-block px-2 py-1 rounded-md bg-white/5 border border-white/5 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
                                         {selectedClip.type.toUpperCase()}
                                     </span>
-                                    {selectedClip.groupId && (
+                                    {selectedClip.group_id && (
                                         <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-bold uppercase tracking-wider text-indigo-400 whitespace-nowrap">
                                             <Folder className="w-3 h-3" />
-                                            {groups.find(g => g.id === selectedClip.groupId)?.title}
+                                            {groups.find(g => g.id === selectedClip.group_id)?.title}
                                         </span>
                                     )}
                                 </div>
@@ -531,7 +544,7 @@ export default function Dashboard() {
                                 <div>
                                     <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Tags</h3>
                                     <div className="flex flex-wrap gap-2">
-                                        {selectedClip.tags.map((tag: string) => (
+                                        {selectedClip.tags && selectedClip.tags.map((tag: string) => (
                                             <span key={tag} className="text-xs font-medium text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-full">
                                                 #{tag}
                                             </span>
@@ -542,9 +555,9 @@ export default function Dashboard() {
                                 {selectedClip.type === 'url' && (
                                     <div>
                                         <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Source</h3>
-                                        <a href={selectedClip.src} target="_blank" className="flex items-center gap-2 text-sm text-white hover:text-indigo-400 transition-colors truncate">
+                                        <a href={selectedClip.src_url} target="_blank" className="flex items-center gap-2 text-sm text-white hover:text-indigo-400 transition-colors truncate">
                                             <ExternalLink className="w-4 h-4" />
-                                            {selectedClip.src}
+                                            {selectedClip.src_url}
                                         </a>
                                     </div>
                                 )}
@@ -556,34 +569,35 @@ export default function Dashboard() {
                         {isEditing ? (
                             <>
                                 <button 
-                                    onClick={() => {
-                                        // Save Logic (Mock Update)
-                                        const updatedClip = {
-                                            ...selectedClip,
+                                    onClick={async () => {
+                                        // Save Logic (Supabase Update)
+                                        const tagsArray = editForm.tags.split(',').map(t => t.trim()).filter(Boolean)
+                                        const { data: updatedClip, error } = await supabase.from('clips').update({
                                             title: editForm.title,
                                             description: editForm.description,
-
-                                            tags: editForm.tags.split(',').map(t => t.trim()).filter(Boolean),
-                                            groupId: editForm.groupId
-                                        }
-                                        setSelectedClip(updatedClip)
-                                        // Update groups count logic (simplified)
-                                        const oldGroup = groups.find(g => g.id === selectedClip.groupId)
-                                        const newGroup = groups.find(g => g.id === editForm.groupId)
+                                            tags: tagsArray,
+                                            group_id: editForm.groupId || null
+                                        }).eq('id', selectedClip.id).select().single()
                                         
-                                        if (selectedClip.groupId !== editForm.groupId) {
-                                            const updatedGroups = groups.map(g => {
-                                                if (g.id === oldGroup?.id) return {...g, count: g.count - 1}
-                                                if (g.id === newGroup?.id) return {...g, count: g.count + 1}
-                                                return g
-                                            })
-                                            setGroups(updatedGroups)
+                                        if (updatedClip) {
+                                            setSelectedClip(updatedClip)
+                                            // Update groups count logic
+                                            const oldGroup = groups.find(g => g.id === selectedClip.group_id)
+                                            const newGroup = groups.find(g => g.id === editForm.groupId)
+                                            
+                                            if (selectedClip.group_id !== editForm.groupId) {
+                                                const updatedGroups = groups.map(g => {
+                                                    if (g.id === oldGroup?.id) return {...g, count: g.count - 1}
+                                                    if (g.id === newGroup?.id) return {...g, count: g.count + 1}
+                                                    return g
+                                                })
+                                                setGroups(updatedGroups)
+                                            }
+                                            
+                                            // Update clips list too
+                                            setClips(clips.map(c => c.id === updatedClip.id ? updatedClip : c))
                                         }
-                                        
-                                        // Update clips list too
-                                        setClips(clips.map(c => c.id === updatedClip.id ? updatedClip : c))
 
-                                        // In real app, we'd update Supabase here
                                         setIsEditing(false)
                                     }}
                                     className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
@@ -831,33 +845,80 @@ export default function Dashboard() {
                         Cancel
                     </button>
                     <button 
-                        onClick={() => {
-                            // Mock Save logic handling File Object URL
-                            let previewSrc = newItemForm.url
+                        onClick={async () => {
+                            // Determine Clip Type and Source
+                            const type = activeTab === 'link' ? 'url' : (activeTab === 'note' ? 'text' : activeTab)
+                            let src_url = newItemForm.url
+                            
+                            // NOTE: File Upload to Storage Bucket would happen here.
+                            // For MVP without storage setup yet, we'll just mock the URL for uploaded files or use a placeholder.
                             if ((activeTab === 'image' || activeTab === 'pdf') && newItemForm.file) {
-                                previewSrc = URL.createObjectURL(newItemForm.file)
+                                if (!user) return
+
+                                try {
+                                    const file = newItemForm.file
+                                    const fileExt = file.name.split('.').pop()
+                                    const fileName = `${user.id}/${Date.now()}.${fileExt}`
+                                    
+                                    const { data: uploadData, error: uploadError } = await supabase.storage
+                                        .from('domi-uploads')
+                                        .upload(fileName, file)
+
+                                    if (uploadError) {
+                                        console.error('Upload Error:', uploadError)
+                                        alert('Failed to upload file.')
+                                        return
+                                    }
+
+                                    const { data: { publicUrl } } = supabase.storage
+                                        .from('domi-uploads')
+                                        .getPublicUrl(fileName)
+                                    
+                                    src_url = publicUrl
+                                } catch (e) {
+                                    console.error('File processing error:', e)
+                                    alert('Error processing file')
+                                    return
+                                }
                             }
-                            
-                            const newClip: any = {
-                                id: clips.length + 1,
-                                type: activeTab === 'link' ? 'url' : (activeTab === 'note' ? 'text' : activeTab),
-                                title: newItemForm.title || 'Untitled Memory',
+
+                            if (!user) {
+                                console.error('No user found')
+                                return
+                            }
+
+                            const tagsArray = newItemForm.tags.split(',').map(t => t.trim()).filter(Boolean)
+
+                            console.log('Attempting create with:', { type, title: newItemForm.title, tags: tagsArray, user: user.id })
+
+                            const { data, error } = await supabase.from('clips').insert({
+                                type: type,
+                                title: newItemForm.title || `${type} memory`,
                                 content: newItemForm.content,
-                                src: previewSrc || 'https://example.com',
-                                description: newItemForm.description || (newItemForm.file ? `Uploaded: ${newItemForm.file.size} bytes` : 'Added manually'),
-
-                                tags: newItemForm.tags.split(',').map(t => t.trim()).filter(Boolean),
-                                groupId: newItemForm.groupId
-                            }
-                            setClips([newClip, ...clips])
+                                src_url: src_url,
+                                description: newItemForm.description,
+                                tags: tagsArray,
+                                group_id: newItemForm.groupId || null,
+                                user_id: user.id
+                            }).select().single()
                             
-                            // Update group count
-                            if (newItemForm.groupId) {
-                                setGroups(groups.map(g => g.id === newItemForm.groupId ? {...g, count: g.count + 1} : g))
+                            if (error) {
+                                console.error('SUPABASE ERROR:', error)
+                                alert('Error: ' + error.message)
                             }
-
-                            setNewItemForm({ url: '', title: '', description: '', content: '', tags: '', file: null, groupId: '' })
-                            setIsAddModalOpen(false)
+                            
+                            if (data) {
+                                console.log('SUCCESS:', data)
+                                setClips([data, ...clips])
+                                
+                                // Update group count
+                                if (newItemForm.groupId) {
+                                    setGroups(groups.map(g => g.id === newItemForm.groupId ? {...g, count: g.count + 1} : g))
+                                }
+                                
+                                setNewItemForm({ url: '', title: '', description: '', content: '', tags: '', file: null, groupId: '' })
+                                setIsAddModalOpen(false)
+                            }
                         }}
                         className="px-8 py-3 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20 transition-all transform hover:scale-[1.02]"
                     >
@@ -929,12 +990,15 @@ export default function Dashboard() {
                      <p className="text-sm text-zinc-500 mb-4">Select a memory to move to this group:</p>
                      
                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {clips.filter(c => c.groupId !== activeGroupFilter).map(clip => (
+                        {clips.filter(c => c.group_id !== activeGroupFilter).map(clip => (
                             <div 
                                 key={clip.id}
-                                onClick={() => {
+                                onClick={async () => {
                                     // Move clip logic
-                                    const oldGroup = groups.find(g => g.id === clip.groupId)
+                                    const { error } = await supabase.from('clips').update({ group_id: activeGroupFilter }).eq('id', clip.id)
+                                    if (error) return // Handle error
+
+                                    const oldGroup = groups.find(g => g.id === clip.group_id)
                                     const newGroup = groups.find(g => g.id === activeGroupFilter)
 
                                     const updatedGroups = groups.map(g => {
@@ -943,12 +1007,12 @@ export default function Dashboard() {
                                         return g
                                     })
                                     setGroups(updatedGroups)
-                                    setClips(clips.map(c => c.id === clip.id ? {...c, groupId: activeGroupFilter} : c) as any)
+                                    setClips(clips.map(c => c.id === clip.id ? {...c, group_id: activeGroupFilter} : c) as any)
                                     setIsAddToGroupModalOpen(false)
                                 }}
                                 className="aspect-square bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/10 transition-all cursor-pointer relative group"
                             >
-                                {clip.type === 'image' && <img src={clip.src} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />}
+                                {clip.type === 'image' && <img src={clip.src_url} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />}
                                 {clip.type === 'text' && <div className="p-4 text-xs text-white/70 line-clamp-6">{clip.content}</div>}
                                 {clip.type === 'url' && <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-zinc-600 font-bold text-xl">URL</div>}
                                 {clip.type === 'pdf' && <div className="w-full h-full flex items-center justify-center bg-red-500/10 text-red-500/50"><FileText className="w-8 h-8" /></div>}
@@ -958,7 +1022,7 @@ export default function Dashboard() {
                                 </div>
                             </div>
                         ))}
-                        {clips.filter(c => c.groupId !== activeGroupFilter).length === 0 && (
+                        {clips.filter(c => c.group_id !== activeGroupFilter).length === 0 && (
                             <div className="col-span-full py-12 text-center text-zinc-500">
                                 <p>No other memories available to add.</p>
                             </div>
