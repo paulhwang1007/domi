@@ -68,6 +68,12 @@ export default function Dashboard() {
       fileInputRef.current?.click()
   }
 
+  const closeAddModal = () => {
+      setNewItemForm({ url: '', title: '', description: '', content: '', tags: '', file: null })
+      setDragActive(false)
+      setIsAddModalOpen(false)
+  }
+
   useEffect(() => {
     const checkUser = async () => {
         const { data: { user } } = await supabase.auth.getUser()
@@ -376,7 +382,7 @@ export default function Dashboard() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <div 
                 className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity animate-in fade-in duration-200" 
-                onClick={() => setIsAddModalOpen(false)}
+                onClick={closeAddModal}
             />
             
             <div className="relative w-full max-w-2xl bg-[#0E0C25] border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
@@ -385,7 +391,7 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between p-6 border-b border-white/5">
                     <h2 className="text-xl font-bold text-white">Add New Memory</h2>
                     <button 
-                        onClick={() => setIsAddModalOpen(false)}
+                        onClick={closeAddModal}
                         className="p-2 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
                     >
                         <X className="w-5 h-5" />
@@ -565,7 +571,7 @@ export default function Dashboard() {
                 {/* Footer */}
                 <div className="p-6 border-t border-white/5 flex justify-end gap-3 bg-black/20">
                     <button 
-                        onClick={() => setIsAddModalOpen(false)}
+                        onClick={closeAddModal}
                         className="px-6 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"
                     >
                         Cancel
