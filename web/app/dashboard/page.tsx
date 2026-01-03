@@ -40,6 +40,7 @@ export default function Dashboard() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'link' | 'image' | 'note' | 'pdf'>('link')
   const [newItemForm, setNewItemForm] = useState({ url: '', title: '', description: '', content: '', tags: '', file: null as File | null, groupId: '' })
+  const [deleteConfirmation, setDeleteConfirmation] = useState<string | null>(null) // Stores ID of item being deleted (or 'current' for modal)
   const supabase = createClient()
   const router = useRouter()
   const profileRef = useRef<HTMLDivElement>(null)
@@ -147,7 +148,7 @@ export default function Dashboard() {
 
   const handleDeleteGroup = async (groupId: string, e: React.MouseEvent) => {
       e.stopPropagation()
-      if (!confirm('Are you sure you want to delete this group? Memories will be kept but uncategorized.')) return
+      // confirm check removed as it is handled by UI state now
 
       // 1. Uncategorize clips
       const { error: updateError } = await supabase.from('clips').update({ group_id: null }).eq('group_id', groupId)
@@ -166,6 +167,48 @@ export default function Dashboard() {
       // Update local state
       setGroups(groups.filter(g => g.id !== groupId))
       setClips(clips.map(c => c.group_id === groupId ? { ...c, group_id: null } : c))
+  }
+
+  const handleConfirmDelete = async () => {
+      if (!deleteConfirmation) return
+
+      if (deleteConfirmation === 'current' && selectedClip) {
+          // Delete Memory
+          const { error } = await supabase.from('clips').delete().eq('id', selectedClip.id)
+          if (error) {
+              alert('Failed to delete: ' + error.message)
+              return
+          }
+           // Update local state
+           setClips(clips.filter(c => c.id !== selectedClip.id))
+           // Update group count if applicable
+           if (selectedClip.group_id) {
+               setGroups(groups.map(g => g.id === selectedClip.group_id ? {...g, count: g.count - 1} : g))
+           }
+           setSelectedClip(null)
+      } else {
+          // Delete Group
+          const groupId = deleteConfirmation
+          
+           // 1. Uncategorize clips
+           const { error: updateError } = await supabase.from('clips').update({ group_id: null }).eq('group_id', groupId)
+           if (updateError) {
+               alert('Failed to update memories: ' + updateError.message)
+               return
+           }
+     
+           // 2. Delete group
+           const { error: deleteError } = await supabase.from('groups').delete().eq('id', groupId)
+           if (deleteError) {
+               alert('Failed to delete group: ' + deleteError.message)
+               return
+           }
+     
+           // Update local state
+           setGroups(groups.filter(g => g.id !== groupId))
+           setClips(clips.map(c => c.group_id === groupId ? { ...c, group_id: null } : c))
+      }
+      setDeleteConfirmation(null)
   }
 
 
@@ -328,7 +371,7 @@ export default function Dashboard() {
                         >
                                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button 
-                                        onClick={(e) => handleDeleteGroup(group.id, e)}
+                                        onClick={(e) => { e.stopPropagation(); setDeleteConfirmation(group.id) }}
                                         className="p-2 rounded-full bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-colors border border-red-500/20"
                                         title="Delete Group"
                                     >
@@ -371,7 +414,7 @@ export default function Dashboard() {
             </div>
         ) : (
             filteredClips.map((clip) => (
-            <div key={clip.id} className="break-inside-avoid mb-6 group" onClick={() => { setSelectedClip(clip); setModalImageError(false); setIsEditing(false); setEditForm({ title: clip.title || '', description: clip.description || '', tags: clip.tags ? clip.tags.join(', ') : '', groupId: clip.group_id || '' }) }}>
+            <div key={clip.id} className="break-inside-avoid mb-6 group" onClick={() => { setSelectedClip(clip); setModalImageError(false); setIsEditing(false); setDeleteConfirmation(null); setEditForm({ title: clip.title || '', description: clip.description || '', tags: clip.tags ? clip.tags.join(', ') : '', groupId: clip.group_id || '' }) }}>
                 <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 cursor-pointer">
                 
                 {clip.type === 'image' && (
@@ -644,27 +687,9 @@ export default function Dashboard() {
                                     >
                                         Cancel
                                     </button>
+                                    
                                     <button 
-                                        onClick={async () => {
-                                            if (!confirm('Are you sure you want to delete this memory? This cannot be undone.')) return
-                                            
-                                            const { error } = await supabase.from('clips').delete().eq('id', selectedClip.id)
-                                            
-                                            if (error) {
-                                                alert('Failed to delete: ' + error.message)
-                                                return
-                                            }
-
-                                            // Update local state
-                                            setClips(clips.filter(c => c.id !== selectedClip.id))
-                                            
-                                            // Update group count if applicable
-                                            if (selectedClip.group_id) {
-                                                setGroups(groups.map(g => g.id === selectedClip.group_id ? {...g, count: g.count - 1} : g))
-                                            }
-                                            
-                                            setSelectedClip(null)
-                                        }}
+                                        onClick={() => setDeleteConfirmation('current')}
                                         className="px-4 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-semibold py-3 rounded-xl transition-colors border border-red-500/20"
                                         title="Delete Memory"
                                     >
@@ -1092,6 +1117,42 @@ export default function Dashboard() {
              </div>
         </div>
       )}
+       {/* Delete Confirmation Modal */}
+       {deleteConfirmation && (
+           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+               <div 
+                   className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity animate-in fade-in duration-200" 
+                   onClick={() => setDeleteConfirmation(null)}
+               />
+               <div className="relative w-full max-w-sm bg-[#0E0C25] border border-white/10 rounded-3xl shadow-2xl p-8 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-200">
+                    <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
+                        <Trash className="w-8 h-8 text-red-500" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">Are you sure?</h3>
+                    <p className="text-zinc-400 text-sm mb-6 leading-relaxed">
+                        {deleteConfirmation === 'current' 
+                            ? "This will permanently delete this memory. This action cannot be undone."
+                            : "This will delete the group. Any memories inside will be moved to 'All Memories' and kept safe."
+                        }
+                    </p>
+                    <div className="flex gap-3 w-full">
+                        <button 
+                            onClick={() => setDeleteConfirmation(null)}
+                            className="flex-1 px-4 py-3 rounded-xl text-sm font-semibold bg-white/5 hover:bg-white/10 text-white transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            onClick={handleConfirmDelete}
+                            className="flex-1 px-4 py-3 rounded-xl text-sm font-semibold bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20 transition-all"
+                        >
+                            Yes, Delete
+                        </button>
+                    </div>
+               </div>
+           </div>
+       )}
+
     </div>
   )
 }
