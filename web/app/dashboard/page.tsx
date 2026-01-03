@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Search, Settings, Loader2, LogOut, User, X, ExternalLink, Copy, Check, Pencil } from 'lucide-react'
+import { Plus, Search, Settings, Loader2, LogOut, User, X, ExternalLink, Copy, Check, Pencil, Link as LinkIcon, Image as ImageIcon, StickyNote, FileText, Upload } from 'lucide-react'
 
 // Mock Data for MVP
 const MOCK_CLIPS = [
@@ -20,9 +20,15 @@ export default function Dashboard() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const [clips, setClips] = useState(MOCK_CLIPS)
   const [selectedClip, setSelectedClip] = useState<any>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [editForm, setEditForm] = useState({ title: '', description: '', tags: '' })
+  
+  // Add Modal State
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<'link' | 'image' | 'note' | 'pdf'>('link')
+  const [newItemForm, setNewItemForm] = useState({ url: '', title: '', content: '', tags: '', file: null as File | null })
   const supabase = createClient()
   const router = useRouter()
   const profileRef = useRef<HTMLDivElement>(null)
@@ -108,7 +114,7 @@ export default function Dashboard() {
 
       {/* Masonry Feed (Simulated with Columns for now) */}
       <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
-        {MOCK_CLIPS.map((clip) => (
+        {clips.map((clip) => (
           <div key={clip.id} className="break-inside-avoid mb-6 group" onClick={() => { setSelectedClip(clip); setIsEditing(false); setEditForm({ title: clip.title, description: clip.description || '', tags: clip.tags.join(', ') }) }}>
             <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 cursor-pointer">
               
@@ -146,7 +152,10 @@ export default function Dashboard() {
         ))}
 
         {/* Add Card */}
-        <div className="break-inside-avoid mb-6 border-2 border-dashed border-white/10 rounded-2xl p-8 flex flex-col items-center justify-center text-zinc-500 hover:text-white hover:border-white/20 hover:bg-white/5 transition-all cursor-pointer h-64">
+        <div 
+            onClick={() => setIsAddModalOpen(true)}
+            className="break-inside-avoid mb-6 border-2 border-dashed border-white/10 rounded-2xl p-8 flex flex-col items-center justify-center text-zinc-500 hover:text-white hover:border-white/20 hover:bg-white/5 transition-all cursor-pointer h-64"
+        >
             <Plus className="w-8 h-8 mb-2" />
             <span className="text-sm font-medium">Add new memory</span>
         </div>
@@ -308,6 +317,163 @@ export default function Dashboard() {
                             </>
                         )}
                     </div>
+                </div>
+            </div>
+        </div>
+      )}
+
+       {/* Add Memory Modal */}
+       {isAddModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div 
+                className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity animate-in fade-in duration-200" 
+                onClick={() => setIsAddModalOpen(false)}
+            />
+            
+            <div className="relative w-full max-w-2xl bg-[#0E0C25] border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
+                
+                {/* Header */}
+                <div className="flex items-center justify-between p-6 border-b border-white/5">
+                    <h2 className="text-xl font-bold text-white">Add New Memory</h2>
+                    <button 
+                        onClick={() => setIsAddModalOpen(false)}
+                        className="p-2 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+
+                {/* Body */}
+                <div className="p-6 space-y-6">
+                    {/* Tabs */}
+                    <div className="flex p-1 bg-white/5 rounded-xl">
+                        {(['link', 'image', 'note', 'pdf'] as const).map((tab) => (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-lg transition-all ${
+                                    activeTab === tab 
+                                    ? 'bg-indigo-600 text-white shadow-lg' 
+                                    : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                                }`}
+                            >
+                                {tab === 'link' && <LinkIcon className="w-4 h-4" />}
+                                {tab === 'image' && <ImageIcon className="w-4 h-4" />}
+                                {tab === 'note' && <StickyNote className="w-4 h-4" />}
+                                {tab === 'pdf' && <FileText className="w-4 h-4" />}
+                                <span className="capitalize">{tab}</span>
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Dynamic Content Inputs */}
+                    <div className="min-h-[150px]">
+                        {activeTab === 'link' && (
+                             <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                                <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">URL</label>
+                                <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-indigo-500/50 transition-all">
+                                    <LinkIcon className="w-5 h-5 text-zinc-500" />
+                                    <input 
+                                        type="url" 
+                                        placeholder="https://example.com/article" 
+                                        className="bg-transparent border-none outline-none text-white placeholder-zinc-600 w-full"
+                                        value={newItemForm.url}
+                                        onChange={(e) => setNewItemForm({...newItemForm, url: e.target.value})}
+                                        autoFocus
+                                    />
+                                </div>
+                             </div>
+                        )}
+
+                        {activeTab === 'image' && (
+                             <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                                <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Upload Image</label>
+                                <div className="border-2 border-dashed border-white/10 rounded-xl p-8 flex flex-col items-center justify-center text-zinc-500 hover:text-white hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all cursor-pointer h-40 group">
+                                    <Upload className="w-8 h-8 mb-3 text-zinc-600 group-hover:text-indigo-400 transition-colors" />
+                                    <p className="text-sm font-medium group-hover:text-indigo-300">Click to upload or drag and drop</p>
+                                    <p className="text-xs text-zinc-600 mt-1">SVG, PNG, JPG or GIF</p>
+                                </div>
+                             </div>
+                        )}
+
+                        {activeTab === 'note' && (
+                             <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                                <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Note Content</label>
+                                <textarea 
+                                    placeholder="Write your thoughts..." 
+                                    className="w-full h-40 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 resize-none leading-relaxed"
+                                    value={newItemForm.content}
+                                    onChange={(e) => setNewItemForm({...newItemForm, content: e.target.value})}
+                                    autoFocus
+                                />
+                             </div>
+                        )}
+
+                        {activeTab === 'pdf' && (
+                             <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                                <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Upload PDF</label>
+                                <div className="border-2 border-dashed border-white/10 rounded-xl p-8 flex flex-col items-center justify-center text-zinc-500 hover:text-white hover:border-red-500/50 hover:bg-red-500/5 transition-all cursor-pointer h-40 group">
+                                    <FileText className="w-8 h-8 mb-3 text-zinc-600 group-hover:text-red-400 transition-colors" />
+                                    <p className="text-sm font-medium group-hover:text-red-300">Click to upload PDF</p>
+                                    <p className="text-xs text-zinc-600 mt-1">Maximum size 10MB</p>
+                                </div>
+                             </div>
+                        )}
+                    </div>
+
+                    {/* Common Fields */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                             <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Title (Optional)</label>
+                             <input 
+                                 type="text" 
+                                 placeholder="Give it a name" 
+                                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                 value={newItemForm.title}
+                                 onChange={(e) => setNewItemForm({...newItemForm, title: e.target.value})}
+                             />
+                        </div>
+                        <div className="space-y-2">
+                             <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Tags</label>
+                             <input 
+                                 type="text" 
+                                 placeholder="design, ideas, ..." 
+                                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                 value={newItemForm.tags}
+                                 onChange={(e) => setNewItemForm({...newItemForm, tags: e.target.value})}
+                             />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="p-6 border-t border-white/5 flex justify-end gap-3 bg-black/20">
+                    <button 
+                        onClick={() => setIsAddModalOpen(false)}
+                        className="px-6 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        onClick={() => {
+                            // Mock Save
+                            const newClip: any = {
+                                id: clips.length + 1,
+                                type: activeTab === 'link' ? 'url' : (activeTab === 'note' ? 'text' : activeTab),
+                                title: newItemForm.title || 'Untitled Memory',
+                                content: newItemForm.content,
+                                src: newItemForm.url || 'https://example.com',
+                                description: 'Added manually',
+                                tags: newItemForm.tags.split(',').map(t => t.trim()).filter(Boolean)
+                            }
+                            setClips([newClip, ...clips])
+                            setNewItemForm({ url: '', title: '', content: '', tags: '', file: null })
+                            setIsAddModalOpen(false)
+                        }}
+                        className="px-8 py-3 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20 transition-all transform hover:scale-[1.02]"
+                    >
+                        Create Memory
+                    </button>
                 </div>
             </div>
         </div>
