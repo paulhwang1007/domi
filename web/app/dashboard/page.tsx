@@ -28,10 +28,45 @@ export default function Dashboard() {
   // Add Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'link' | 'image' | 'note' | 'pdf'>('link')
-  const [newItemForm, setNewItemForm] = useState({ url: '', title: '', content: '', tags: '', file: null as File | null })
+  const [newItemForm, setNewItemForm] = useState({ url: '', title: '', description: '', content: '', tags: '', file: null as File | null })
   const supabase = createClient()
   const router = useRouter()
   const profileRef = useRef<HTMLDivElement>(null)
+  
+  // File Upload State and Refs
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [dragActive, setDragActive] = useState(false)
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && e.target.files[0]) {
+          const file = e.target.files[0]
+          setNewItemForm({...newItemForm, file: file, title: newItemForm.title || file.name.split('.')[0] })
+      }
+  }
+
+  const handleDrag = (e: React.DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      if (e.type === "dragenter" || e.type === "dragover") {
+          setDragActive(true)
+      } else if (e.type === "dragleave") {
+          setDragActive(false)
+      }
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setDragActive(false)
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+          const file = e.dataTransfer.files[0]
+          setNewItemForm({...newItemForm, file: file, title: newItemForm.title || file.name.split('.')[0] })
+      }
+  }
+
+  const triggerFileInput = () => {
+      fileInputRef.current?.click()
+  }
 
   useEffect(() => {
     const checkUser = async () => {
@@ -137,6 +172,12 @@ export default function Dashboard() {
                   </div>
               )}
 
+              {clip.type === 'pdf' && (
+                  <div className="h-32 bg-red-500/10 flex items-center justify-center text-red-500/50">
+                      <FileText className="w-12 h-12" />
+                  </div>
+              )}
+
               <div className="p-4">
                 <h3 className="font-medium text-white mb-2 group-hover:text-indigo-400 transition-colors">{clip.title}</h3>
                 {clip.description && <p className="text-xs text-zinc-500 mb-3">{clip.description}</p>}
@@ -197,6 +238,14 @@ export default function Dashboard() {
                                  {selectedClip.src}
                              </a>
                          </div>
+                     )}
+
+                     {selectedClip.type === 'pdf' && (
+                        <iframe 
+                            src={selectedClip.src} 
+                            className="w-full h-full rounded-xl shadow-2xl border-none bg-white"
+                            title="PDF Preview"
+                        />
                      )}
                 </div>
 
@@ -388,10 +437,39 @@ export default function Dashboard() {
                         {activeTab === 'image' && (
                              <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
                                 <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Upload Image</label>
-                                <div className="border-2 border-dashed border-white/10 rounded-xl p-8 flex flex-col items-center justify-center text-zinc-500 hover:text-white hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all cursor-pointer h-40 group">
-                                    <Upload className="w-8 h-8 mb-3 text-zinc-600 group-hover:text-indigo-400 transition-colors" />
-                                    <p className="text-sm font-medium group-hover:text-indigo-300">Click to upload or drag and drop</p>
-                                    <p className="text-xs text-zinc-600 mt-1">SVG, PNG, JPG or GIF</p>
+                                <input 
+                                    ref={fileInputRef}
+                                    type="file" 
+                                    accept="image/*" 
+                                    className="hidden" 
+                                    onChange={handleFileChange}
+                                />
+                                <div 
+                                    onClick={triggerFileInput}
+                                    onDragEnter={handleDrag}
+                                    onDragLeave={handleDrag}
+                                    onDragOver={handleDrag}
+                                    onDrop={handleDrop}
+                                    className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer h-40 group relative overflow-hidden ${
+                                        dragActive ? 'border-indigo-500 bg-indigo-500/10' : 'border-white/10 text-zinc-500 hover:text-white hover:border-indigo-500/50 hover:bg-indigo-500/5'
+                                    }`}
+                                >
+                                    {newItemForm.file ? (
+                                        <>
+                                            <img src={URL.createObjectURL(newItemForm.file)} alt="Preview" className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-40 transition-opacity" />
+                                            <div className="relative z-10 flex flex-col items-center">
+                                                <Check className="w-8 h-8 mb-2 text-green-400" />
+                                                <p className="text-sm font-medium text-white">{newItemForm.file.name}</p>
+                                                <p className="text-xs text-zinc-300 mt-1">Click to change</p>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Upload className="w-8 h-8 mb-3 text-zinc-600 group-hover:text-indigo-400 transition-colors" />
+                                            <p className="text-sm font-medium group-hover:text-indigo-300">Click to upload or drag and drop</p>
+                                            <p className="text-xs text-zinc-600 mt-1">SVG, PNG, JPG or GIF</p>
+                                        </>
+                                    )}
                                 </div>
                              </div>
                         )}
@@ -412,10 +490,38 @@ export default function Dashboard() {
                         {activeTab === 'pdf' && (
                              <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
                                 <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Upload PDF</label>
-                                <div className="border-2 border-dashed border-white/10 rounded-xl p-8 flex flex-col items-center justify-center text-zinc-500 hover:text-white hover:border-red-500/50 hover:bg-red-500/5 transition-all cursor-pointer h-40 group">
-                                    <FileText className="w-8 h-8 mb-3 text-zinc-600 group-hover:text-red-400 transition-colors" />
-                                    <p className="text-sm font-medium group-hover:text-red-300">Click to upload PDF</p>
-                                    <p className="text-xs text-zinc-600 mt-1">Maximum size 10MB</p>
+                                <input 
+                                    ref={fileInputRef}
+                                    type="file" 
+                                    accept=".pdf" 
+                                    className="hidden" 
+                                    onChange={handleFileChange}
+                                />
+                                <div 
+                                    onClick={triggerFileInput}
+                                    onDragEnter={handleDrag}
+                                    onDragLeave={handleDrag}
+                                    onDragOver={handleDrag}
+                                    onDrop={handleDrop}
+                                    className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer h-40 group relative overflow-hidden ${
+                                        dragActive ? 'border-red-500 bg-red-500/10' : 'border-white/10 text-zinc-500 hover:text-white hover:border-red-500/50 hover:bg-red-500/5'
+                                    }`}
+                                >
+                                    {newItemForm.file ? (
+                                        <>
+                                            <div className="flex flex-col items-center z-10">
+                                                <FileText className="w-8 h-8 mb-2 text-red-400" />
+                                                <p className="text-sm font-medium text-white">{newItemForm.file.name}</p>
+                                                <p className="text-xs text-zinc-300 mt-1">{(newItemForm.file.size / 1024 / 1024).toFixed(2)} MB</p>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <FileText className="w-8 h-8 mb-3 text-zinc-600 group-hover:text-red-400 transition-colors" />
+                                            <p className="text-sm font-medium group-hover:text-red-300">Click to upload PDF</p>
+                                            <p className="text-xs text-zinc-600 mt-1">Maximum size 10MB</p>
+                                        </>
+                                    )}
                                 </div>
                              </div>
                         )}
@@ -434,6 +540,16 @@ export default function Dashboard() {
                              />
                         </div>
                         <div className="space-y-2">
+                             <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Description (Optional)</label>
+                             <input 
+                                 type="text" 
+                                 placeholder="Add a brief description" 
+                                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                 value={newItemForm.description}
+                                 onChange={(e) => setNewItemForm({...newItemForm, description: e.target.value})}
+                             />
+                        </div>
+                        <div className="col-span-2 space-y-2">
                              <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Tags</label>
                              <input 
                                  type="text" 
@@ -456,18 +572,23 @@ export default function Dashboard() {
                     </button>
                     <button 
                         onClick={() => {
-                            // Mock Save
+                            // Mock Save logic handling File Object URL
+                            let previewSrc = newItemForm.url
+                            if ((activeTab === 'image' || activeTab === 'pdf') && newItemForm.file) {
+                                previewSrc = URL.createObjectURL(newItemForm.file)
+                            }
+                            
                             const newClip: any = {
                                 id: clips.length + 1,
                                 type: activeTab === 'link' ? 'url' : (activeTab === 'note' ? 'text' : activeTab),
                                 title: newItemForm.title || 'Untitled Memory',
                                 content: newItemForm.content,
-                                src: newItemForm.url || 'https://example.com',
-                                description: 'Added manually',
+                                src: previewSrc || 'https://example.com',
+                                description: newItemForm.description || (newItemForm.file ? `Uploaded: ${newItemForm.file.size} bytes` : 'Added manually'),
                                 tags: newItemForm.tags.split(',').map(t => t.trim()).filter(Boolean)
                             }
                             setClips([newClip, ...clips])
-                            setNewItemForm({ url: '', title: '', content: '', tags: '', file: null })
+                            setNewItemForm({ url: '', title: '', description: '', content: '', tags: '', file: null })
                             setIsAddModalOpen(false)
                         }}
                         className="px-8 py-3 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20 transition-all transform hover:scale-[1.02]"
