@@ -5,15 +5,20 @@ import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Search, Settings, Loader2, LogOut, User, X, ExternalLink, Copy, Check, Pencil, Link as LinkIcon, Image as ImageIcon, StickyNote, FileText, Upload } from 'lucide-react'
+import { Plus, Search, Settings, Loader2, LogOut, User, X, ExternalLink, Copy, Check, Pencil, Link as LinkIcon, Image as ImageIcon, StickyNote, FileText, Upload, LayoutGrid, Folder, ChevronRight } from 'lucide-react'
 
 // Mock Data for MVP
 const MOCK_CLIPS = [
-  { id: 1, type: 'image', title: 'Neon City', src: 'https://images.unsplash.com/photo-1514525253440-b393452e8d2e?auto=format&fit=crop&w=500&q=80', tags: ['Inspiration', 'Cyberpunk'] },
-  { id: 2, type: 'text', title: 'Design Principles', content: 'Good design is as little design as possible.', tags: ['Quotes', 'Design'] },
-  { id: 3, type: 'url', title: 'Next.js Documentation', src: 'https://nextjs.org', description: 'The React Framework for the Web', tags: ['Dev', 'Docs'] },
-  { id: 4, type: 'image', title: 'Abstract Shapes', src: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=500&q=80', tags: ['Art', '3D'] },
-  { id: 5, type: 'text', title: 'Todo List', content: '- Buy milk\n- Walk dog\n- Code Domi', tags: ['Personal'] },
+  { id: 1, type: 'image', title: 'Neon City', src: 'https://images.unsplash.com/photo-1514525253440-b393452e8d2e?auto=format&fit=crop&w=500&q=80', tags: ['Inspiration', 'Cyberpunk'], groupId: 'g1' },
+  { id: 2, type: 'text', title: 'Design Principles', content: 'Good design is as little design as possible.', tags: ['Quotes', 'Design'], groupId: null },
+  { id: 3, type: 'url', title: 'Next.js Documentation', src: 'https://nextjs.org', description: 'The React Framework for the Web', tags: ['Dev', 'Docs'], groupId: 'g2' },
+  { id: 4, type: 'image', title: 'Abstract Shapes', src: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=500&q=80', tags: ['Art', '3D'], groupId: 'g1' },
+  { id: 5, type: 'text', title: 'Todo List', content: '- Buy milk\n- Walk dog\n- Code Domi', tags: ['Personal'], groupId: null },
+]
+
+const MOCK_GROUPS = [
+    { id: 'g1', title: 'Inspiration', color: 'indigo', count: 2 },
+    { id: 'g2', title: 'Development', color: 'emerald', count: 1 },
 ]
 
 export default function Dashboard() {
@@ -22,16 +27,24 @@ export default function Dashboard() {
   const [isProfileOpen, setIsProfileOpen] = useState(false)
 
   const [clips, setClips] = useState(MOCK_CLIPS)
+  const [groups, setGroups] = useState(MOCK_GROUPS)
+  const [currentView, setCurrentView] = useState<'feed' | 'groups'>('feed')
+  const [activeGroupFilter, setActiveGroupFilter] = useState<string | null>(null)
+  
+  // Group Creation State
+  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false)
+  const [newGroupTitle, setNewGroupTitle] = useState('')
+
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
   const [selectedClip, setSelectedClip] = useState<any>(null)
   const [isEditing, setIsEditing] = useState(false)
-  const [editForm, setEditForm] = useState({ title: '', description: '', tags: '' })
+  const [editForm, setEditForm] = useState({ title: '', description: '', tags: '', groupId: '' })
   
   // Add Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'link' | 'image' | 'note' | 'pdf'>('link')
-  const [newItemForm, setNewItemForm] = useState({ url: '', title: '', description: '', content: '', tags: '', file: null as File | null })
+  const [newItemForm, setNewItemForm] = useState({ url: '', title: '', description: '', content: '', tags: '', file: null as File | null, groupId: '' })
   const supabase = createClient()
   const router = useRouter()
   const profileRef = useRef<HTMLDivElement>(null)
@@ -72,9 +85,22 @@ export default function Dashboard() {
   }
 
   const closeAddModal = () => {
-      setNewItemForm({ url: '', title: '', description: '', content: '', tags: '', file: null })
+      setNewItemForm({ url: '', title: '', description: '', content: '', tags: '', file: null, groupId: '' })
       setDragActive(false)
       setIsAddModalOpen(false)
+  }
+
+  const handleCreateGroup = () => {
+      if (!newGroupTitle.trim()) return
+      const newGroup = {
+          id: `g${groups.length + 1}`,
+          title: newGroupTitle,
+          color: ['indigo', 'emerald', 'purple', 'rose', 'orange'][Math.floor(Math.random() * 5)],
+          count: 0
+      }
+      setGroups([...groups, newGroup])
+      setNewGroupTitle('')
+      setIsGroupModalOpen(false)
   }
 
   useEffect(() => {
@@ -116,6 +142,11 @@ export default function Dashboard() {
   }, [searchQuery])
 
   const filteredClips = clips.filter(clip => {
+      // Group Filter
+      if (activeGroupFilter && clip.groupId !== activeGroupFilter) {
+          return false
+      }
+
       if (!debouncedSearchQuery) return true
       const query = debouncedSearchQuery.toLowerCase()
       
@@ -191,8 +222,75 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* Masonry Feed (Simulated with Columns for now) */}
-      {/* Masonry Feed (Simulated with Columns for now) */}
+      {/* View Switcher / Navigation */}
+      <div className="flex items-center gap-6 mb-8 border-b border-white/5 pb-1">
+        <button 
+            onClick={() => { setCurrentView('feed'); setActiveGroupFilter(null) }}
+            className={`flex items-center gap-2 pb-3 px-1 text-sm font-medium transition-all relative ${
+                currentView === 'feed' && !activeGroupFilter
+                ? 'text-white after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-indigo-500 after:rounded-full after:shadow-[0_0_12px_rgba(99,102,241,0.5)]' 
+                : 'text-zinc-500 hover:text-zinc-300'
+            }`}
+        >
+            <LayoutGrid className="w-4 h-4" />
+            All Memories
+        </button>
+        <button 
+            onClick={() => { setCurrentView('groups'); setActiveGroupFilter(null) }}
+            className={`flex items-center gap-2 pb-3 px-1 text-sm font-medium transition-all relative ${
+                currentView === 'groups' 
+                ? 'text-white after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-indigo-500 after:rounded-full after:shadow-[0_0_12px_rgba(99,102,241,0.5)]' 
+                : 'text-zinc-500 hover:text-zinc-300'
+            }`}
+        >
+            <Folder className="w-4 h-4" />
+            Groups
+        </button>
+
+        {activeGroupFilter && (
+             <div className="flex items-center gap-2 pb-3 px-1 text-sm font-medium text-white relative after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-indigo-500 after:rounded-full after:shadow-[0_0_12px_rgba(99,102,241,0.5)]">
+                <ChevronRight className="w-4 h-4 text-zinc-600" />
+                <span className="text-indigo-400">{groups.find(g => g.id === activeGroupFilter)?.title}</span>
+                <button 
+                    onClick={() => setActiveGroupFilter(null)}
+                    className="ml-2 bg-white/10 hover:bg-white/20 p-0.5 rounded-full transition-colors"
+                >
+                    <X className="w-3 h-3" />
+                </button>
+             </div>
+        )}
+      </div>
+
+      {currentView === 'groups' && !activeGroupFilter ? (
+          /* Groups Grid View */
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+              {groups.map(group => (
+                  <div 
+                    key={group.id} 
+                    onClick={() => { setActiveGroupFilter(group.id); setCurrentView('feed') }}
+                    className="aspect-square bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col items-center justify-center gap-4 hover:bg-white/10 hover:scale-[1.02] hover:shadow-xl hover:shadow-indigo-500/10 transition-all cursor-pointer group"
+                  >
+                        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center bg-${group.color}-500/10 text-${group.color}-400 group-hover:scale-110 transition-transform`}>
+                            <Folder className="w-8 h-8" />
+                        </div>
+                        <div className="text-center">
+                            <h3 className="font-semibold text-white mb-1">{group.title}</h3>
+                            <p className="text-xs text-zinc-500">{group.count} memories</p>
+                        </div>
+                  </div>
+              ))}
+              
+              {/* Add Group Card */}
+              <div 
+                className="aspect-square border-2 border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center gap-4 text-zinc-500 hover:text-white hover:border-white/20 hover:bg-white/5 transition-all cursor-pointer"
+                onClick={() => setIsGroupModalOpen(true)}
+              >
+                  <Plus className="w-8 h-8" />
+                  <span className="text-sm font-medium">New Group</span>
+              </div>
+          </div>
+      ) : (
+      /* Masonry Feed */
       <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
         {filteredClips.length === 0 ? (
             <div className="col-span-full h-64 flex flex-col items-center justify-center text-zinc-500 animate-in fade-in duration-300">
@@ -202,7 +300,7 @@ export default function Dashboard() {
             </div>
         ) : (
             filteredClips.map((clip) => (
-            <div key={clip.id} className="break-inside-avoid mb-6 group" onClick={() => { setSelectedClip(clip); setIsEditing(false); setEditForm({ title: clip.title, description: clip.description || '', tags: clip.tags.join(', ') }) }}>
+            <div key={clip.id} className="break-inside-avoid mb-6 group" onClick={() => { setSelectedClip(clip); setIsEditing(false); setEditForm({ title: clip.title, description: clip.description || '', tags: clip.tags.join(', '), groupId: clip.groupId || '' }) }}>
                 <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 cursor-pointer">
                 
                 {clip.type === 'image' && (
@@ -254,6 +352,7 @@ export default function Dashboard() {
             <span className="text-sm font-medium">Add new memory</span>
         </div>
       </div>
+      )}
 
        {/* Detail Modal */}
        {selectedClip && (
@@ -339,14 +438,36 @@ export default function Dashboard() {
                                     className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                                 />
                              </div>
+
+                             <div className="space-y-1">
+                                <label className="text-xs font-semibold text-zinc-400">Group</label>
+                                <select 
+                                    value={editForm.groupId}
+                                    onChange={(e) => setEditForm({...editForm, groupId: e.target.value})}
+                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 appearance-none"
+                                >
+                                    <option value="" className="bg-[#0E0C25]">No Group</option>
+                                    {groups.map(g => (
+                                        <option key={g.id} value={g.id} className="bg-[#0E0C25]">{g.title}</option>
+                                    ))}
+                                </select>
+                             </div>
                         </div>
                     ) : (
                         /* View Mode */
                         <>
                             <div className="mb-6">
-                                <span className="inline-block px-2 py-1 rounded-md bg-white/5 border border-white/5 text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-3">
-                                    {selectedClip.type.toUpperCase()}
-                                </span>
+                                <div className="flex items-center gap-2 mb-3">
+                                    <span className="inline-block px-2 py-1 rounded-md bg-white/5 border border-white/5 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+                                        {selectedClip.type.toUpperCase()}
+                                    </span>
+                                    {selectedClip.groupId && (
+                                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-bold uppercase tracking-wider text-indigo-400 whitespace-nowrap">
+                                            <Folder className="w-3 h-3" />
+                                            {groups.find(g => g.id === selectedClip.groupId)?.title}
+                                        </span>
+                                    )}
+                                </div>
                                 <h2 className="text-3xl font-bold text-white mb-2">{selectedClip.title}</h2>
                                 {selectedClip.description && <p className="text-zinc-400 leading-relaxed">{selectedClip.description}</p>}
                             </div>
@@ -386,9 +507,27 @@ export default function Dashboard() {
                                             ...selectedClip,
                                             title: editForm.title,
                                             description: editForm.description,
-                                            tags: editForm.tags.split(',').map(t => t.trim()).filter(Boolean)
+
+                                            tags: editForm.tags.split(',').map(t => t.trim()).filter(Boolean),
+                                            groupId: editForm.groupId
                                         }
                                         setSelectedClip(updatedClip)
+                                        // Update groups count logic (simplified)
+                                        const oldGroup = groups.find(g => g.id === selectedClip.groupId)
+                                        const newGroup = groups.find(g => g.id === editForm.groupId)
+                                        
+                                        if (selectedClip.groupId !== editForm.groupId) {
+                                            const updatedGroups = groups.map(g => {
+                                                if (g.id === oldGroup?.id) return {...g, count: g.count - 1}
+                                                if (g.id === newGroup?.id) return {...g, count: g.count + 1}
+                                                return g
+                                            })
+                                            setGroups(updatedGroups)
+                                        }
+                                        
+                                        // Update clips list too
+                                        setClips(clips.map(c => c.id === updatedClip.id ? updatedClip : c))
+
                                         // In real app, we'd update Supabase here
                                         setIsEditing(false)
                                     }}
@@ -612,6 +751,19 @@ export default function Dashboard() {
                                  onChange={(e) => setNewItemForm({...newItemForm, tags: e.target.value})}
                              />
                         </div>
+                        <div className="col-span-2 space-y-2">
+                             <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Group (Optional)</label>
+                             <select 
+                                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 appearance-none"
+                                 value={newItemForm.groupId}
+                                 onChange={(e) => setNewItemForm({...newItemForm, groupId: e.target.value})}
+                             >
+                                 <option value="" className="bg-[#0E0C25]">No Group</option>
+                                 {groups.map(g => (
+                                     <option key={g.id} value={g.id} className="bg-[#0E0C25]">{g.title}</option>
+                                 ))}
+                             </select>
+                        </div>
                     </div>
                 </div>
 
@@ -638,10 +790,18 @@ export default function Dashboard() {
                                 content: newItemForm.content,
                                 src: previewSrc || 'https://example.com',
                                 description: newItemForm.description || (newItemForm.file ? `Uploaded: ${newItemForm.file.size} bytes` : 'Added manually'),
-                                tags: newItemForm.tags.split(',').map(t => t.trim()).filter(Boolean)
+
+                                tags: newItemForm.tags.split(',').map(t => t.trim()).filter(Boolean),
+                                groupId: newItemForm.groupId
                             }
                             setClips([newClip, ...clips])
-                            setNewItemForm({ url: '', title: '', description: '', content: '', tags: '', file: null })
+                            
+                            // Update group count
+                            if (newItemForm.groupId) {
+                                setGroups(groups.map(g => g.id === newItemForm.groupId ? {...g, count: g.count + 1} : g))
+                            }
+
+                            setNewItemForm({ url: '', title: '', description: '', content: '', tags: '', file: null, groupId: '' })
                             setIsAddModalOpen(false)
                         }}
                         className="px-8 py-3 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20 transition-all transform hover:scale-[1.02]"
@@ -650,6 +810,42 @@ export default function Dashboard() {
                     </button>
                 </div>
             </div>
+        </div>
+      )}
+
+      
+      {/* Create Group Modal */}
+      {isGroupModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+             <div 
+                 className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity animate-in fade-in duration-200" 
+                 onClick={() => setIsGroupModalOpen(false)}
+             />
+             <div className="relative w-full max-w-md bg-[#0E0C25] border border-white/10 rounded-3xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-200">
+                 <h2 className="text-xl font-bold text-white mb-4">Create New Group</h2>
+                 <input 
+                    type="text" 
+                    placeholder="Group Name" 
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 mb-6"
+                    value={newGroupTitle}
+                    onChange={(e) => setNewGroupTitle(e.target.value)}
+                    autoFocus
+                 />
+                 <div className="flex justify-end gap-3">
+                     <button 
+                         onClick={() => setIsGroupModalOpen(false)}
+                         className="px-6 py-2 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"
+                     >
+                         Cancel
+                     </button>
+                     <button 
+                         onClick={handleCreateGroup}
+                         className="px-6 py-2 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20"
+                     >
+                         Create
+                     </button>
+                 </div>
+             </div>
         </div>
       )}
     </div>
