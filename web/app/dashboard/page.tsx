@@ -45,6 +45,9 @@ export default function Dashboard() {
   const [failedImages, setFailedImages] = useState<Set<number>>(new Set())
   const [modalImageError, setModalImageError] = useState(false)
   
+  // Add Existing to Group State
+  const [isAddToGroupModalOpen, setIsAddToGroupModalOpen] = useState(false)
+
   // Add Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'link' | 'image' | 'note' | 'pdf'>('link')
@@ -361,11 +364,17 @@ export default function Dashboard() {
 
         {/* Add Card */}
         <div 
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={() => {
+                if (activeGroupFilter) {
+                    setIsAddToGroupModalOpen(true)
+                } else {
+                    setIsAddModalOpen(true)
+                }
+            }}
             className="break-inside-avoid mb-6 border-2 border-dashed border-white/10 rounded-2xl p-8 flex flex-col items-center justify-center text-zinc-500 hover:text-white hover:border-white/20 hover:bg-white/5 transition-all cursor-pointer h-64"
         >
             <Plus className="w-8 h-8 mb-2" />
-            <span className="text-sm font-medium">Add new memory</span>
+            <span className="text-sm font-medium">{activeGroupFilter ? 'Add existing memory' : 'Add new memory'}</span>
         </div>
       </div>
       )}
@@ -871,6 +880,71 @@ export default function Dashboard() {
                      >
                          Create
                      </button>
+                 </div>
+             </div>
+        </div>
+
+      )}
+
+      {/* Add Existing to Group Modal */}
+      {isAddToGroupModalOpen && activeGroupFilter && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+             <div 
+                 className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity animate-in fade-in duration-200" 
+                 onClick={() => setIsAddToGroupModalOpen(false)}
+             />
+             <div className="relative w-full max-w-2xl bg-[#0E0C25] border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200 h-[70vh]">
+                 <div className="flex items-center justify-between p-6 border-b border-white/5">
+                    <h2 className="text-xl font-bold text-white">
+                        Add to <span className="text-indigo-400">{groups.find(g => g.id === activeGroupFilter)?.title}</span>
+                    </h2>
+                    <button 
+                        onClick={() => setIsAddToGroupModalOpen(false)}
+                        className="p-2 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                 </div>
+                 
+                 <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+                     <p className="text-sm text-zinc-500 mb-4">Select a memory to move to this group:</p>
+                     
+                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {clips.filter(c => c.groupId !== activeGroupFilter).map(clip => (
+                            <div 
+                                key={clip.id}
+                                onClick={() => {
+                                    // Move clip logic
+                                    const oldGroup = groups.find(g => g.id === clip.groupId)
+                                    const newGroup = groups.find(g => g.id === activeGroupFilter)
+
+                                    const updatedGroups = groups.map(g => {
+                                        if (g.id === oldGroup?.id) return {...g, count: g.count - 1}
+                                        if (g.id === newGroup?.id) return {...g, count: g.count + 1}
+                                        return g
+                                    })
+                                    setGroups(updatedGroups)
+                                    setClips(clips.map(c => c.id === clip.id ? {...c, groupId: activeGroupFilter} : c) as any)
+                                    setIsAddToGroupModalOpen(false)
+                                }}
+                                className="aspect-square bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/10 transition-all cursor-pointer relative group"
+                            >
+                                {clip.type === 'image' && <img src={clip.src} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />}
+                                {clip.type === 'text' && <div className="p-4 text-xs text-white/70 line-clamp-6">{clip.content}</div>}
+                                {clip.type === 'url' && <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-zinc-600 font-bold text-xl">URL</div>}
+                                {clip.type === 'pdf' && <div className="w-full h-full flex items-center justify-center bg-red-500/10 text-red-500/50"><FileText className="w-8 h-8" /></div>}
+                                
+                                <div className="absolute bottom-0 left-0 w-full p-2 bg-gradient-to-t from-black/80 to-transparent">
+                                    <p className="text-xs font-medium text-white truncate">{clip.title}</p>
+                                </div>
+                            </div>
+                        ))}
+                        {clips.filter(c => c.groupId !== activeGroupFilter).length === 0 && (
+                            <div className="col-span-full py-12 text-center text-zinc-500">
+                                <p>No other memories available to add.</p>
+                            </div>
+                        )}
+                     </div>
                  </div>
              </div>
         </div>
