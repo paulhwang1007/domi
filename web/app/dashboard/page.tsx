@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Search, Settings, Loader2, LogOut, User, X, ExternalLink, Copy, Check, Pencil, Link as LinkIcon, Image as ImageIcon, StickyNote, FileText, Upload, LayoutGrid, Folder, ChevronRight, ImageOff } from 'lucide-react'
+import { Plus, Search, Settings, Loader2, LogOut, User, X, ExternalLink, Copy, Check, Pencil, Link as LinkIcon, Image as ImageIcon, StickyNote, FileText, Upload, LayoutGrid, Folder, ChevronRight, ImageOff, Trash } from 'lucide-react'
 
 
 
@@ -143,6 +143,29 @@ export default function Dashboard() {
         setNewGroupTitle('')
         setIsGroupModalOpen(false)
     }
+  }
+
+  const handleDeleteGroup = async (groupId: string, e: React.MouseEvent) => {
+      e.stopPropagation()
+      if (!confirm('Are you sure you want to delete this group? Memories will be kept but uncategorized.')) return
+
+      // 1. Uncategorize clips
+      const { error: updateError } = await supabase.from('clips').update({ group_id: null }).eq('group_id', groupId)
+      if (updateError) {
+          alert('Failed to update memories: ' + updateError.message)
+          return
+      }
+
+      // 2. Delete group
+      const { error: deleteError } = await supabase.from('groups').delete().eq('id', groupId)
+      if (deleteError) {
+          alert('Failed to delete group: ' + deleteError.message)
+          return
+      }
+
+      // Update local state
+      setGroups(groups.filter(g => g.id !== groupId))
+      setClips(clips.map(c => c.group_id === groupId ? { ...c, group_id: null } : c))
   }
 
 
@@ -301,8 +324,17 @@ export default function Dashboard() {
                         <div 
                             key={group.id} 
                             onClick={() => { setActiveGroupFilter(group.id); setCurrentView('feed'); setSearchQuery('') }}
-                            className="aspect-square bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col items-center justify-center gap-4 hover:bg-white/10 hover:scale-[1.02] hover:shadow-xl hover:shadow-indigo-500/10 transition-all cursor-pointer group"
+                            className="aspect-square bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col items-center justify-center gap-4 hover:bg-white/10 hover:scale-[1.02] hover:shadow-xl hover:shadow-indigo-500/10 transition-all cursor-pointer group relative"
                         >
+                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button 
+                                        onClick={(e) => handleDeleteGroup(group.id, e)}
+                                        className="p-2 rounded-full bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-colors border border-red-500/20"
+                                        title="Delete Group"
+                                    >
+                                        <Trash className="w-3 h-3" />
+                                    </button>
+                                </div>
                                 <div className={`w-16 h-16 rounded-2xl flex items-center justify-center bg-${group.color}-500/10 text-${group.color}-400 group-hover:scale-110 transition-transform`}>
                                     <Folder className="w-8 h-8" />
                                 </div>
@@ -605,12 +637,40 @@ export default function Dashboard() {
                                     <Check className="w-4 h-4" />
                                     Save Changes
                                 </button>
-                                <button 
-                                    onClick={() => setIsEditing(false)}
-                                    className="px-6 bg-white/5 hover:bg-white/10 text-white font-semibold py-3 rounded-xl transition-colors"
-                                >
-                                    Cancel
-                                </button>
+                                <div className="flex gap-3">
+                                    <button 
+                                        onClick={() => setIsEditing(false)}
+                                        className="px-6 bg-white/5 hover:bg-white/10 text-white font-semibold py-3 rounded-xl transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button 
+                                        onClick={async () => {
+                                            if (!confirm('Are you sure you want to delete this memory? This cannot be undone.')) return
+                                            
+                                            const { error } = await supabase.from('clips').delete().eq('id', selectedClip.id)
+                                            
+                                            if (error) {
+                                                alert('Failed to delete: ' + error.message)
+                                                return
+                                            }
+
+                                            // Update local state
+                                            setClips(clips.filter(c => c.id !== selectedClip.id))
+                                            
+                                            // Update group count if applicable
+                                            if (selectedClip.group_id) {
+                                                setGroups(groups.map(g => g.id === selectedClip.group_id ? {...g, count: g.count - 1} : g))
+                                            }
+                                            
+                                            setSelectedClip(null)
+                                        }}
+                                        className="px-4 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-semibold py-3 rounded-xl transition-colors border border-red-500/20"
+                                        title="Delete Memory"
+                                    >
+                                        <Trash className="w-5 h-5" />
+                                    </button>
+                                </div>
                             </>
                         ) : (
                             <>
