@@ -8,7 +8,8 @@
     "activeTab",
     "storage",
     "cookies",
-    "scripting"
+    "scripting",
+    "notifications"
   ],
   "host_permissions": [
     "http://localhost:3000/*",
@@ -25,5 +26,14 @@
       "matches": ["<all_urls>"],
       "js": ["content.js"]
     }
-  ]
+  ],
+  "commands": {
+    "save_page": {
+      "suggested_key": {
+        "default": "Alt+D",
+        "mac": "Alt+D"
+      },
+      "description": "Save current page to Domi"
+    }
+  }
 }
