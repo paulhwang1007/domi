@@ -172,6 +172,12 @@ export default function Dashboard() {
       )
   })
 
+  // Filter Groups
+  const filteredGroups = groups.filter(group => {
+      if (!debouncedSearchQuery) return true
+      return group.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+  })
+
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>
 
   return (
@@ -271,30 +277,43 @@ export default function Dashboard() {
       {currentView === 'groups' && !activeGroupFilter ? (
           /* Groups Grid View */
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-              {groups.map(group => (
-                  <div 
-                    key={group.id} 
-                    onClick={() => { setActiveGroupFilter(group.id); setCurrentView('feed') }}
-                    className="aspect-square bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col items-center justify-center gap-4 hover:bg-white/10 hover:scale-[1.02] hover:shadow-xl hover:shadow-indigo-500/10 transition-all cursor-pointer group"
-                  >
-                        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center bg-${group.color}-500/10 text-${group.color}-400 group-hover:scale-110 transition-transform`}>
-                            <Folder className="w-8 h-8" />
-                        </div>
-                        <div className="text-center">
-                            <h3 className="font-semibold text-white mb-1">{group.title}</h3>
-                            <p className="text-xs text-zinc-500">{group.count} memories</p>
-                        </div>
+              {filteredGroups.length === 0 && debouncedSearchQuery ? (
+                  <div className="col-span-full h-64 flex flex-col items-center justify-center text-zinc-500 animate-in fade-in duration-300">
+                      <Folder className="w-12 h-12 mb-4 opacity-50" />
+                      <p className="text-lg font-medium text-white/50">No groups found for "{debouncedSearchQuery}"</p>
                   </div>
-              ))}
-              
-              {/* Add Group Card */}
-              <div 
-                className="aspect-square border-2 border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center gap-4 text-zinc-500 hover:text-white hover:border-white/20 hover:bg-white/5 transition-all cursor-pointer"
-                onClick={() => setIsGroupModalOpen(true)}
-              >
-                  <Plus className="w-8 h-8" />
-                  <span className="text-sm font-medium">New Group</span>
-              </div>
+              ) : (
+                  <>
+                    {filteredGroups.map(group => (
+                        <div 
+                            key={group.id} 
+                            onClick={() => { setActiveGroupFilter(group.id); setCurrentView('feed'); setSearchQuery('') }}
+                            className="aspect-square bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col items-center justify-center gap-4 hover:bg-white/10 hover:scale-[1.02] hover:shadow-xl hover:shadow-indigo-500/10 transition-all cursor-pointer group"
+                        >
+                                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center bg-${group.color}-500/10 text-${group.color}-400 group-hover:scale-110 transition-transform`}>
+                                    <Folder className="w-8 h-8" />
+                                </div>
+                                <div className="text-center">
+                                    <h3 className="font-semibold text-white mb-1">{group.title}</h3>
+                                    <p className="text-xs text-zinc-500">{group.count} memories</p>
+                                </div>
+                        </div>
+                    ))}
+                    
+                    {/* Add Group Card - Only show if not searching or if explicitly desired behavior (leaving it visible during search might be confusing if it doesn't match query, but standard is usually to hide "add" cards during filtering unless specific design) 
+                        For now, I will hide "Add Group" if searching to avoid clutter, or keep it as the last item if query is empty.
+                    */}
+                    {!debouncedSearchQuery && (
+                        <div 
+                            className="aspect-square border-2 border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center gap-4 text-zinc-500 hover:text-white hover:border-white/20 hover:bg-white/5 transition-all cursor-pointer"
+                            onClick={() => setIsGroupModalOpen(true)}
+                        >
+                            <Plus className="w-8 h-8" />
+                            <span className="text-sm font-medium">New Group</span>
+                        </div>
+                    )}
+                  </>
+              )}
           </div>
       ) : (
       /* Masonry Feed */
