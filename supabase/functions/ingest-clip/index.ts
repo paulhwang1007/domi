@@ -61,6 +61,7 @@ serve(async (req) => {
       try {
         const response = await fetch(record.content)
         const html = await response.text()
+        
         // Very basic extraction: remove tags. In production use a parser.
         contentToAnalyze = html.replace(/<[^>]*>?/gm, ' ').slice(0, 10000) // Limit context
       } catch (e) {
@@ -103,7 +104,7 @@ serve(async (req) => {
       metadata: { 
         ...record.metadata,
         summary: metadata.summary,
-        auto_title: metadata.title 
+        auto_title: metadata.title
       },
       tags: uniqueTags,
       status: 'processed'
