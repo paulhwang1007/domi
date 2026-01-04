@@ -549,8 +549,8 @@ export default function Dashboard() {
                      )}
                      
                      {selectedClip.type === 'text' && (
-                         <div className="max-w-lg">
-                            <p className="font-serif text-2xl md:text-3xl text-white/90 leading-relaxed">"{selectedClip.content}"</p>
+                         <div className="max-w-lg max-h-full overflow-y-auto custom-scrollbar p-2">
+                            <p className="font-serif text-xl md:text-2xl text-white/90 leading-relaxed whitespace-pre-wrap">"{selectedClip.content}"</p>
                          </div>
                      )}
 

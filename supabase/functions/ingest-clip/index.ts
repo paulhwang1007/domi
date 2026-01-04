@@ -41,6 +41,7 @@ serve(async (req) => {
             .update({ 
                 metadata: { ...record.metadata, ...mockMetadata, auto_title: mockMetadata.title },
                 tags: [...(record.tags || []), ...mockMetadata.tags],
+                description: record.description || mockMetadata.summary,
                 status: 'processed'
             })
             .eq('id', record.id)
@@ -111,6 +112,11 @@ serve(async (req) => {
     // Only update title if it was empty or default
     if (!record.title || record.title === 'New Clip') {
         updatePayload.title = metadata.title
+    }
+
+    // Only update description if it was empty
+    if (!record.description) {
+        updatePayload.description = metadata.summary
     }
 
     const { error } = await supabase
