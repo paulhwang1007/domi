@@ -94,12 +94,12 @@ serve(async (req) => {
         const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim()
         metadata = JSON.parse(jsonStr)
     } catch (err) {
-        console.error("Gemini API Error (likely rate limit):", err)
+        console.error("Gemini API Error:", err)
         // Fallback to Mock Data
         metadata = {
             title: record.title || "Untitled (Auto-generated)",
-            summary: "This is a fallback summary because the AI rate limit was exceeded.",
-            tags: ["fallback", "rate-limit", "mock-data"]
+            summary: "AI processing failed (Model/Limit Error).",
+            tags: ["ai-error", "fallback"]
         }
     }
 

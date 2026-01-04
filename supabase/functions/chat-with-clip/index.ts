@@ -62,7 +62,7 @@ serve(async (req) => {
         response = result.response.text()
     } catch (err) {
         console.error("Gemini Chat Error:", err)
-        response = "I'm currently hitting my thought limit (Rate Limit Exceeded). Please try again in a minute! 🧠💤"
+        response = "I'm having trouble connecting to the AI model right now. (Error: " + (err.message || "Unknown") + ")"
     }
 
     return new Response(JSON.stringify({ 
