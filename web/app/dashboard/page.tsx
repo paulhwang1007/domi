@@ -1,18 +1,40 @@
-
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Search, Settings, Loader2, LogOut, User, X, ExternalLink, Copy, Check, Pencil, Link as LinkIcon, Image as ImageIcon, StickyNote, FileText, Upload, LayoutGrid, Folder, ChevronRight, ImageOff, Trash } from 'lucide-react'
+import { 
+    LayoutGrid, List, Plus, Search, LogOut, Settings, 
+    MoreVertical, Trash, ExternalLink, X, Image as ImageIcon,
+    FileText, Link as LinkIcon, StickyNote, FolderPlus,
+    ChevronDown, Filter, Check, Ghost, Loader2, User, Copy, Pencil, Upload, Folder, ChevronRight, ImageOff
+} from 'lucide-react'
+import { z } from 'zod'
 
+// --- Validation Schemas ---
+const ClipSchema = z.object({
+    title: z.string().min(1, "Title is required").max(100, "Title is too long"),
+    description: z.string().max(500, "Description is too long").optional(),
+    tags: z.string().max(200, "Tags string is too long").optional(), // Comma separated
+    url: z.string().url("Invalid URL format").optional().or(z.literal('')),
+})
 
+const GroupSchema = z.object({
+    title: z.string().min(1, "Group Name is required").max(50, "Group Name is too long")
+})
+
+// --- Mock Data ---
+const MOCK_CLIPS = []
+const MOCK_GROUPS = []
 
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+  
+  // Validation State
+  const [formErrors, setFormErrors] = useState<string[]>([])
 
   const [clips, setClips] = useState<any[]>([])
   const [groups, setGroups] = useState<any[]>([])
@@ -81,9 +103,10 @@ export default function Dashboard() {
   }
 
   const closeAddModal = () => {
+      setIsAddModalOpen(false)
+      setFormErrors([])
       setNewItemForm({ url: '', title: '', description: '', content: '', tags: '', file: null, groupId: '' })
       setDragActive(false)
-      setIsAddModalOpen(false)
   }
 
   useEffect(() => {
@@ -130,7 +153,14 @@ export default function Dashboard() {
   }
 
   const handleCreateGroup = async () => {
-    if (!newGroupTitle.trim()) return
+    // Validation
+    const result = GroupSchema.safeParse({ title: newGroupTitle })
+    if (!result.success) {
+        setFormErrors(result.error.issues.map(e => e.message))
+        return
+    }
+    setFormErrors([])
+
     const color = ['indigo', 'emerald', 'purple', 'rose', 'orange'][Math.floor(Math.random() * 5)]
     
     const { data, error } = await supabase.from('groups').insert({
@@ -873,10 +903,23 @@ export default function Dashboard() {
                         )}
                     </div>
 
+
+
+                    {/* Validation Errors */}
+                    {formErrors.length > 0 && (
+                        <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                            {formErrors.map((err, i) => (
+                                <p key={i} className="text-xs text-red-400 flex items-center gap-2">
+                                    <X className="w-3 h-3" /> {err}
+                                </p>
+                            ))}
+                        </div>
+                    )}
+
                     {/* Common Fields */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                             <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Title (Optional)</label>
+                             <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Title</label>
                              <input 
                                  type="text" 
                                  placeholder="Give it a name" 
@@ -931,8 +974,24 @@ export default function Dashboard() {
                     </button>
                     <button 
                         onClick={async () => {
-                            // Determine Clip Type and Source
-                            const type = activeTab === 'link' ? 'url' : (activeTab === 'note' ? 'text' : activeTab)
+        // Validation
+        const payload = {
+            title: newItemForm.title,
+            description: newItemForm.description,
+            tags: newItemForm.tags,
+            url: newItemForm.url
+        }
+        const result = ClipSchema.safeParse(payload)
+        if (!result.success) {
+             setFormErrors(result.error.issues.map(e => e.message))
+             return
+        }
+        setFormErrors([])
+
+        if (!user) return
+
+        // Determine Clip Type and Source
+        const type = activeTab === 'link' ? 'url' : (activeTab === 'note' ? 'text' : activeTab)
                             let src_url = newItemForm.url
                             
                             // NOTE: File Upload to Storage Bucket would happen here.

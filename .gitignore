@@ -1,0 +1,13 @@
+# MacOS
+.DS_Store
+
+# Node
+node_modules
+npm-debug.log
+
+# Supabase
+.env
+.env.local
+
+# Extension Secrets
+extension/config.js

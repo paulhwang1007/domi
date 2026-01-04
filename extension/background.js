@@ -1,10 +1,11 @@
 // Domi Extension Background Script
 
-const SUPABASE_URL = "https://ebynzdfllhomhlcraogx.supabase.co";
-// This key was verified from web/.env.local
-const SUPABASE_KEY = "sb_publishable_Asik6IXCqmlVeuCcdcMx6g_rlA-Uuvd";
-const WEB_URL = "http://localhost:3000";
-const PROJECT_REF = "ebynzdfllhomhlcraogx";
+importScripts('config.js');
+
+const SUPABASE_URL = CONFIG.SUPABASE_URL;
+const SUPABASE_KEY = CONFIG.SUPABASE_KEY;
+const WEB_URL = CONFIG.WEB_URL;
+const PROJECT_REF = CONFIG.PROJECT_REF;
 
 // --- Authentication Helper ---
 async function getAccessToken() {
@@ -112,7 +113,33 @@ async function getUser(token) {
     return await response.json();
 }
 
+// --- Validation ---
+function isValidUrl(string) {
+    try {
+        const url = new URL(string);
+        return url.protocol === "http:" || url.protocol === "https:";
+    } catch (_) {
+        return false;
+    }
+}
+
 async function saveClip(type, data) {
+    console.log("Save Clip Triggered:", type, data);
+    
+    // Security: Validate URL
+    if ((type === 'url' || type === 'image' || type === 'pdf') && data.srcUrl) {
+        if (!isValidUrl(data.srcUrl)) {
+            console.error("Security Block: Invalid URL protocol", data.srcUrl);
+            chrome.notifications.create({
+                type: 'basic',
+                iconUrl: 'icons/icon128.png',
+                title: 'Save Failed',
+                message: 'Invalid URL. Only HTTP/HTTPS links are supported.'
+            });
+            return;
+        }
+    }
+
     const token = await getAccessToken();
     
     if (!token) {
