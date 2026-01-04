@@ -8,7 +8,8 @@ import {
     LayoutGrid, List, Plus, Search, LogOut, Settings, 
     MoreVertical, Trash, ExternalLink, X, Image as ImageIcon,
     FileText, Link as LinkIcon, StickyNote, FolderPlus,
-    ChevronDown, Filter, Check, Ghost, Loader2, User, Copy, Pencil, Upload, Folder, ChevronRight, ImageOff
+    ChevronDown, Filter, Check, Ghost, Loader2, User, Copy, Pencil, Upload, Folder, ChevronRight, ImageOff,
+    Sparkles, Send, MessageSquare
 } from 'lucide-react'
 import { z } from 'zod'
 
@@ -63,6 +64,50 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<'link' | 'image' | 'note' | 'pdf'>('link')
   const [newItemForm, setNewItemForm] = useState({ url: '', title: '', description: '', content: '', tags: '', file: null as File | null, groupId: '' })
   const [deleteConfirmation, setDeleteConfirmation] = useState<string | null>(null) // Stores ID of item being deleted (or 'current' for modal)
+
+  // Chat State
+  const [isChatOpen, setIsChatOpen] = useState(false)
+  const [chatMessages, setChatMessages] = useState<{role: 'user' | 'ai', content: string}[]>([])
+  const [chatInput, setChatInput] = useState('')
+  const [isChatLoading, setIsChatLoading] = useState(false)
+  const chatScrollRef = useRef<HTMLDivElement>(null)
+
+  const handleSendMessage = async () => {
+    if (!chatInput.trim() || !selectedClip) return
+    
+    const userMsg = chatInput
+    setChatMessages(prev => [...prev, { role: 'user', content: userMsg }])
+    setChatInput('')
+    setIsChatLoading(true)
+
+    // Scroll to bottom
+    setTimeout(() => chatScrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
+
+    try {
+        const { data: { session } } = await supabase.auth.getSession()
+        const response = await fetch('https://ebynzdfllhomhlcraogx.supabase.co/functions/v1/chat-with-clip', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session?.access_token || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`
+            },
+            body: JSON.stringify({
+                messages: [...chatMessages, { role: 'user', content: userMsg }],
+                context: selectedClip.content || selectedClip.description || selectedClip.title // Fallbacks
+            })
+        })
+        
+        const data = await response.json()
+        if (data.error) throw new Error(data.error)
+
+        setChatMessages(prev => [...prev, { role: 'ai', content: data.response }])
+    } catch (e: any) {
+        setChatMessages(prev => [...prev, { role: 'ai', content: "Sorry, I had trouble thinking about that. " + e.message }])
+    } finally {
+        setIsChatLoading(false)
+        setTimeout(() => chatScrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
+    }
+  }
   const supabase = createClient()
   const router = useRouter()
   const profileRef = useRef<HTMLDivElement>(null)
@@ -524,15 +569,24 @@ export default function Dashboard() {
                 onClick={() => setSelectedClip(null)}
             />
             
-            <div className="relative w-full max-w-5xl h-[80vh] bg-[#0E0C25] border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row animate-in fade-in zoom-in-95 duration-200">
-                <button 
-                    onClick={() => setSelectedClip(null)}
-                    className="absolute top-4 right-4 p-2 rounded-full bg-black/20 hover:bg-white/10 text-white/70 hover:text-white transition-colors z-20"
-                >
-                    <X className="w-5 h-5" />
-                </button>
+            <div className={`relative w-full max-w-6xl h-[85vh] bg-[#0E0C25] border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row animate-in fade-in zoom-in-95 duration-200 transition-all ${isChatOpen ? 'max-w-[90vw]' : 'max-w-5xl'}`}>
+                <div className="absolute top-4 right-4 z-20 flex gap-2">
+                    <button 
+                        onClick={() => setIsChatOpen(!isChatOpen)}
+                        className={`p-2 rounded-full transition-all border ${isChatOpen ? 'bg-indigo-500 text-white border-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'bg-black/20 text-white/70 border-transparent hover:bg-white/10 hover:text-white'}`}
+                        title="Chat with Memory"
+                    >
+                        <Sparkles className="w-5 h-5" />
+                    </button>
+                    <button 
+                        onClick={() => { setSelectedClip(null); setIsChatOpen(false); setChatMessages([]) }}
+                        className="p-2 rounded-full bg-black/20 hover:bg-white/10 text-white/70 hover:text-white transition-colors border border-transparent"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
 
-                <div className="w-full md:w-3/5 bg-black/40 flex items-center justify-center p-8 border-b md:border-b-0 md:border-r border-white/5 relative overflow-hidden">
+                <div className={`w-full ${isChatOpen ? 'md:w-1/2' : 'md:w-3/5'} bg-black/40 flex items-center justify-center p-8 border-b md:border-b-0 md:border-r border-white/5 relative overflow-hidden transition-all duration-300`}>
                      {selectedClip.type === 'image' && (
                         modalImageError ? (
                             <div className="flex flex-col items-center justify-center text-zinc-600">
@@ -574,7 +628,78 @@ export default function Dashboard() {
                      )}
                 </div>
 
-                <div className="w-full md:w-2/5 p-8 flex flex-col h-full bg-[#0E0C25]">
+                <div className={`w-full ${isChatOpen ? 'md:w-1/2' : 'md:w-2/5'} p-8 flex flex-col h-full bg-[#0E0C25] transition-all duration-300 relative`}>
+                    
+                    {/* CHAT INTERFACE OVERLAY */}
+                    {isChatOpen && (
+                        <div className="absolute inset-0 z-10 bg-[#0E0C25] flex flex-col animate-in slide-in-from-right duration-300">
+                             {/* Chat Header */}
+                             <div className="p-4 border-b border-white/5 flex items-center gap-2 bg-indigo-500/5">
+                                <Sparkles className="w-4 h-4 text-indigo-400" />
+                                <span className="text-sm font-semibold text-white">Chat with Memory</span>
+                             </div>
+
+                             {/* Chat Messages */}
+                             <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                                {chatMessages.length === 0 && (
+                                    <div className="h-full flex flex-col items-center justify-center text-center p-6 text-zinc-500 space-y-4">
+                                        <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
+                                            <MessageSquare className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium text-white">Ask me anything!</p>
+                                            <p className="text-xs mt-1">"Summarize this", "What are the key takeaways?", "Explain like I'm 5"</p>
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                {chatMessages.map((msg, idx) => (
+                                    <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                        <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                                            msg.role === 'user' 
+                                            ? 'bg-indigo-600 text-white rounded-tr-sm' 
+                                            : 'bg-white/10 text-zinc-200 rounded-tl-sm'
+                                        }`}>
+                                            {msg.content}
+                                        </div>
+                                    </div>
+                                ))}
+                                {isChatLoading && (
+                                     <div className="flex justify-start">
+                                        <div className="bg-white/5 rounded-2xl px-4 py-3 rounded-tl-sm flex gap-1 items-center">
+                                            <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                            <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                            <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                                        </div>
+                                     </div>
+                                )}
+                                <div ref={chatScrollRef} />
+                             </div>
+
+                             {/* Chat Input */}
+                             <div className="p-4 border-t border-white/5">
+                                <div className="relative">
+                                    <input 
+                                        type="text" 
+                                        placeholder="ask a question..." 
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl pl-4 pr-12 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                        value={chatInput}
+                                        onChange={(e) => setChatInput(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && !isChatLoading && handleSendMessage()}
+                                        autoFocus
+                                    />
+                                    <button 
+                                        onClick={handleSendMessage}
+                                        disabled={!chatInput.trim() || isChatLoading}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-indigo-500 text-white hover:bg-indigo-400 disabled:opacity-50 disabled:hover:bg-indigo-500 transition-colors"
+                                    >
+                                        <Send className="w-4 h-4" />
+                                    </button>
+                                </div>
+                             </div>
+                        </div>
+                    )}
+
                     {isEditing ? (
                         /* Edit Mode Form */
                         <div className="flex-1 flex flex-col gap-5 animate-in fade-in duration-200">

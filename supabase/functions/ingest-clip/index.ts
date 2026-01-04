@@ -87,12 +87,21 @@ serve(async (req) => {
       ${contentToAnalyze.slice(0, 15000)}
     `
 
-    const result = await model.generateContent(prompt)
-    const responseText = result.response.text()
-    
-    // Clean up JSON response (sometimes it includes backticks)
-    const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim()
-    const metadata = JSON.parse(jsonStr)
+    let metadata;
+    try {
+        const result = await model.generateContent(prompt)
+        const responseText = result.response.text()
+        const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim()
+        metadata = JSON.parse(jsonStr)
+    } catch (err) {
+        console.error("Gemini API Error (likely rate limit):", err)
+        // Fallback to Mock Data
+        metadata = {
+            title: record.title || "Untitled (Auto-generated)",
+            summary: "This is a fallback summary because the AI rate limit was exceeded.",
+            tags: ["fallback", "rate-limit", "mock-data"]
+        }
+    }
 
     // 5. Update Record
     // Merge new tags with existing ones if any
