@@ -16,7 +16,7 @@ serve(async (req) => {
     if (!messages || !context) throw new Error("Missing messages or context")
 
     const genAI = new GoogleGenerativeAI(Deno.env.get('GEMINI_API_KEY') ?? '')
-    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" })
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
 
     // Construct the history and system prompt
     // We'll treat the context as the "System Context" for this chat
