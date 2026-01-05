@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -71,6 +72,15 @@ export default function Dashboard() {
   const [chatInput, setChatInput] = useState('')
   const [isChatLoading, setIsChatLoading] = useState(false)
   const chatScrollRef = useRef<HTMLDivElement>(null)
+
+  // Reset chat state when a new clip is selected
+  useEffect(() => {
+    if (selectedClip) {
+        setIsChatOpen(false)
+        setChatMessages([])
+        setChatInput('')
+    }
+  }, [selectedClip])
 
   const handleSendMessage = async () => {
     if (!chatInput.trim() || !selectedClip) return
@@ -332,7 +342,7 @@ export default function Dashboard() {
       return group.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
   })
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>
+
 
   return (
     <div className="min-h-screen p-6 md:p-8">
@@ -478,18 +488,55 @@ export default function Dashboard() {
                   </>
               )}
           </div>
+
       ) : (
       /* Masonry Feed */
       <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
-        {filteredClips.length === 0 ? (
+        {loading ? (
+             Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="break-inside-avoid mb-6 bg-white/5 border border-white/5 rounded-2xl h-64 animate-pulse relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-full animate-[shimmer_1.5s_infinite]" />
+                </div>
+             ))
+        ) : clips.length === 0 ? (
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="col-span-full h-[60vh] flex flex-col items-center justify-center text-center p-8 border-2 border-dashed border-white/5 rounded-3xl bg-white/5"
+            >
+                <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-indigo-500/20 to-purple-500/20 flex items-center justify-center mb-6">
+                    <Sparkles className="w-12 h-12 text-indigo-400 animate-pulse" />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-2">Welcome to your External Brain</h2>
+                <p className="text-zinc-400 max-w-md mb-8">
+                    Domi helps you capture, organize, and chat with your digital life. 
+                    Start by adding your first memory.
+                </p>
+                <button 
+                    onClick={() => setIsAddModalOpen(true)}
+                    className="px-8 py-3 bg-white text-black font-bold rounded-full hover:scale-105 transition-transform shadow-[0_0_20px_rgba(255,255,255,0.3)] flex items-center gap-2"
+                >
+                    <Plus className="w-5 h-5" />
+                    Create Memory
+                </button>
+            </motion.div>
+        ) : filteredClips.length === 0 ? (
             <div className="col-span-full h-64 flex flex-col items-center justify-center text-zinc-500 animate-in fade-in duration-300">
                 <Search className="w-12 h-12 mb-4 opacity-50" />
                 <p className="text-lg font-medium text-white/50">No memories found for "{debouncedSearchQuery}"</p>
                 <p className="text-sm">Try a different keyword or tag</p>
             </div>
         ) : (
-            filteredClips.map((clip) => (
-            <div key={clip.id} className="break-inside-avoid mb-6 group" onClick={() => { setSelectedClip(clip); setModalImageError(false); setIsEditing(false); setDeleteConfirmation(null); setEditForm({ title: clip.title || '', description: clip.description || '', tags: clip.tags ? clip.tags.join(', ') : '', groupId: clip.group_id || '' }) }}>
+            filteredClips.map((clip, index) => (
+            <motion.div 
+                layout
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.05, ease: "easeOut" }}
+                key={clip.id} 
+                className="break-inside-avoid mb-6 group" 
+                onClick={() => { setSelectedClip(clip); setModalImageError(false); setIsEditing(false); setDeleteConfirmation(null); setEditForm({ title: clip.title || '', description: clip.description || '', tags: clip.tags ? clip.tags.join(', ') : '', groupId: clip.group_id || '' }) }}
+            >
                 <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 cursor-pointer">
                 
                 {clip.type === 'image' && (
@@ -540,12 +587,16 @@ export default function Dashboard() {
                     </div>
                 </div>
                 </div>
-            </div>
+
+            </motion.div>
             ))
         )}
 
         {/* Add Card */}
-        <div 
+        <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
             onClick={() => {
                 if (activeGroupFilter) {
                     setIsAddToGroupModalOpen(true)
@@ -557,27 +608,35 @@ export default function Dashboard() {
         >
             <Plus className="w-8 h-8 mb-2" />
             <span className="text-sm font-medium">{activeGroupFilter ? 'Add existing memory' : 'Add new memory'}</span>
-        </div>
+        </motion.div>
       </div>
       )}
 
        {/* Detail Modal */}
+       <AnimatePresence>
        {selectedClip && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div 
-                className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity animate-in fade-in duration-200" 
+        <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+        >
+            <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-black/80 backdrop-blur-md" 
                 onClick={() => setSelectedClip(null)}
             />
             
-            <div className={`relative w-full max-w-6xl h-[85vh] bg-[#0E0C25] border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row animate-in fade-in zoom-in-95 duration-200 transition-all ${isChatOpen ? 'max-w-[90vw]' : 'max-w-5xl'}`}>
+            <motion.div 
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className="relative w-full max-w-6xl h-[92vh] md:h-[85vh] bg-[#0E0C25] border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row isolate"
+            >
                 <div className="absolute top-4 right-4 z-20 flex gap-2">
-                    <button 
-                        onClick={() => setIsChatOpen(!isChatOpen)}
-                        className={`p-2 rounded-full transition-all border ${isChatOpen ? 'bg-indigo-500 text-white border-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'bg-black/20 text-white/70 border-transparent hover:bg-white/10 hover:text-white'}`}
-                        title="Chat with Memory"
-                    >
-                        <Sparkles className="w-5 h-5" />
-                    </button>
                     <button 
                         onClick={() => { setSelectedClip(null); setIsChatOpen(false); setChatMessages([]) }}
                         className="p-2 rounded-full bg-black/20 hover:bg-white/10 text-white/70 hover:text-white transition-colors border border-transparent"
@@ -586,15 +645,16 @@ export default function Dashboard() {
                     </button>
                 </div>
 
-                <div className={`w-full ${isChatOpen ? 'md:w-1/2' : 'md:w-3/5'} bg-black/40 flex items-center justify-center p-8 border-b md:border-b-0 md:border-r border-white/5 relative overflow-hidden transition-all duration-300`}>
+                <div className="w-full md:w-3/5 bg-black/40 flex items-center justify-center p-8 border-b md:border-b-0 md:border-r border-white/5 relative overflow-hidden">
                      {selectedClip.type === 'image' && (
                         modalImageError ? (
-                            <div className="flex flex-col items-center justify-center text-zinc-600">
+                            <motion.div layout className="flex flex-col items-center justify-center text-zinc-600">
                                 <ImageOff className="w-16 h-16 mb-4 opacity-50" />
                                 <p className="text-lg font-medium text-zinc-500">Failed to load image</p>
-                            </div>
+                            </motion.div>
                         ) : (
-                           <img 
+                           <motion.img 
+                               layout
                                src={selectedClip.src_url} 
                                className="w-full h-full object-contain shadow-2xl rounded-lg" 
                                onError={() => setModalImageError(true)}
@@ -603,9 +663,9 @@ export default function Dashboard() {
                      )}
                      
                      {selectedClip.type === 'text' && (
-                         <div className="max-w-lg max-h-full overflow-y-auto custom-scrollbar p-2">
-                            <p className="font-serif text-xl md:text-2xl text-white/90 leading-relaxed whitespace-pre-wrap">"{selectedClip.content}"</p>
-                         </div>
+                         <motion.div layout className="max-w-lg max-h-full overflow-y-auto custom-scrollbar p-2">
+                            <motion.p layout className="font-serif text-xl md:text-2xl text-white/90 leading-relaxed whitespace-pre-wrap">"{selectedClip.content}"</motion.p>
+                         </motion.div>
                      )}
 
                      {selectedClip.type === 'url' && (
@@ -628,19 +688,29 @@ export default function Dashboard() {
                      )}
                 </div>
 
-                <div className={`w-full ${isChatOpen ? 'md:w-1/2' : 'md:w-2/5'} p-8 flex flex-col h-full bg-[#0E0C25] transition-all duration-300 relative`}>
+                <div className="w-full md:w-2/5 p-8 flex flex-col h-full bg-[#0E0C25] relative">
                     
-                    {/* CHAT INTERFACE OVERLAY */}
-                    {isChatOpen && (
-                        <div className="absolute inset-0 z-10 bg-[#0E0C25] flex flex-col animate-in slide-in-from-right duration-300">
-                             {/* Chat Header */}
-                             <div className="p-4 border-b border-white/5 flex items-center gap-2 bg-indigo-500/5">
-                                <Sparkles className="w-4 h-4 text-indigo-400" />
-                                <span className="text-sm font-semibold text-white">Chat with Memory</span>
-                             </div>
+                    {/* Tab Header */}
+                    <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl mb-6">
+                        <button
+                             onClick={() => setIsChatOpen(false)}
+                             className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${!isChatOpen ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-400 hover:text-zinc-200'}`}
+                        >
+                            <span className="text-xs font-bold uppercase tracking-wider">Details</span>
+                        </button>
+                        <button
+                             onClick={() => setIsChatOpen(true)}
+                             className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${isChatOpen ? 'bg-indigo-600 text-white shadow-sm' : 'text-zinc-400 hover:text-zinc-200'}`}
+                        >
+                            <Sparkles className="w-4 h-4" />
+                            <span className="text-xs font-bold uppercase tracking-wider">Chat</span>
+                        </button>
+                    </div>
 
+                    {isChatOpen ? (
+                        <>
                              {/* Chat Messages */}
-                             <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                             <div className="flex-1 overflow-y-auto -mx-8 px-8 space-y-4 custom-scrollbar">
                                 {chatMessages.length === 0 && (
                                     <div className="h-full flex flex-col items-center justify-center text-center p-6 text-zinc-500 space-y-4">
                                         <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
@@ -654,7 +724,10 @@ export default function Dashboard() {
                                 )}
                                 
                                 {chatMessages.map((msg, idx) => (
-                                    <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                    <div 
+                                        key={idx} 
+                                        className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}
+                                    >
                                         <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                                             msg.role === 'user' 
                                             ? 'bg-indigo-600 text-white rounded-tr-sm' 
@@ -665,11 +738,11 @@ export default function Dashboard() {
                                     </div>
                                 ))}
                                 {isChatLoading && (
-                                     <div className="flex justify-start">
+                                     <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-300">
                                         <div className="bg-white/5 rounded-2xl px-4 py-3 rounded-tl-sm flex gap-1 items-center">
-                                            <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                                            <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                                            <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                                            <motion.div className="w-1.5 h-1.5 bg-zinc-400 rounded-full" animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.6, ease: "easeInOut" }} />
+                                            <motion.div className="w-1.5 h-1.5 bg-zinc-400 rounded-full" animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.6, ease: "easeInOut", delay: 0.1 }} />
+                                            <motion.div className="w-1.5 h-1.5 bg-zinc-400 rounded-full" animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.6, ease: "easeInOut", delay: 0.2 }} />
                                         </div>
                                      </div>
                                 )}
@@ -677,7 +750,7 @@ export default function Dashboard() {
                              </div>
 
                              {/* Chat Input */}
-                             <div className="p-4 border-t border-white/5">
+                             <div className="pt-6 mt-4 border-t border-white/5">
                                 <div className="relative">
                                     <input 
                                         type="text" 
@@ -697,16 +770,10 @@ export default function Dashboard() {
                                     </button>
                                 </div>
                              </div>
-                        </div>
-                    )}
-
-                    {isEditing ? (
+                        </>
+                    ) : isEditing ? (
                         /* Edit Mode Form */
                         <div className="flex-1 flex flex-col gap-5 animate-in fade-in duration-200">
-                             <div className="flex items-center justify-between mb-2">
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Edit Details</span>
-                             </div>
-
                              <div className="space-y-1">
                                 <label className="text-xs font-semibold text-zinc-400">Title</label>
                                 <input 
@@ -750,54 +817,8 @@ export default function Dashboard() {
                                     ))}
                                 </select>
                              </div>
-                        </div>
-                    ) : (
-                        /* View Mode */
-                        <>
-                            <div className="mb-6">
-                                <div className="flex items-center gap-2 mb-3">
-                                    <span className="inline-block px-2 py-1 rounded-md bg-white/5 border border-white/5 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
-                                        {selectedClip.type.toUpperCase()}
-                                    </span>
-                                    {selectedClip.group_id && (
-                                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-bold uppercase tracking-wider text-indigo-400 whitespace-nowrap">
-                                            <Folder className="w-3 h-3" />
-                                            {groups.find(g => g.id === selectedClip.group_id)?.title}
-                                        </span>
-                                    )}
-                                </div>
-                                <h2 className="text-3xl font-bold text-white mb-2">{selectedClip.title}</h2>
-                                {selectedClip.description && <p className="text-zinc-400 leading-relaxed">{selectedClip.description}</p>}
-                            </div>
-
-                            <div className="space-y-6">
-                                <div>
-                                    <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Tags</h3>
-                                    <div className="flex flex-wrap gap-2">
-                                        {selectedClip.tags && selectedClip.tags.map((tag: string) => (
-                                            <span key={tag} className="text-xs font-medium text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-full">
-                                                #{tag}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {selectedClip.type === 'url' && (
-                                    <div>
-                                        <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Source</h3>
-                                        <a href={selectedClip.src_url} target="_blank" className="flex items-center gap-2 text-sm text-white hover:text-indigo-400 transition-colors truncate">
-                                            <ExternalLink className="w-4 h-4" />
-                                            {selectedClip.src_url}
-                                        </a>
-                                    </div>
-                                )}
-                            </div>
-                        </>
-                    )}
-                    
-                    <div className="pt-6 mt-auto border-t border-white/5 flex gap-3">
-                        {isEditing ? (
-                            <>
+                             
+                             <div className="pt-6 mt-auto border-t border-white/5 flex gap-3">
                                 <button 
                                     onClick={async () => {
                                         // Save Logic (Supabase Update)
@@ -851,9 +872,51 @@ export default function Dashboard() {
                                         <Trash className="w-5 h-5" />
                                     </button>
                                 </div>
-                            </>
-                        ) : (
-                            <>
+                             </div>
+                        </div>
+                    ) : (
+                        /* View Mode */
+                        <>
+                            <div className="mb-6 animate-in fade-in duration-200">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <span className="inline-block px-2 py-1 rounded-md bg-white/5 border border-white/5 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+                                        {selectedClip.type.toUpperCase()}
+                                    </span>
+                                    {selectedClip.group_id && (
+                                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-bold uppercase tracking-wider text-indigo-400 whitespace-nowrap">
+                                            <Folder className="w-3 h-3" />
+                                            {groups.find(g => g.id === selectedClip.group_id)?.title}
+                                        </span>
+                                    )}
+                                </div>
+                                <h2 className="text-3xl font-bold text-white mb-2">{selectedClip.title}</h2>
+                                {selectedClip.description && <p className="text-zinc-400 leading-relaxed">{selectedClip.description}</p>}
+                            </div>
+
+                            <div className="space-y-6 flex-1 animate-in fade-in duration-200">
+                                <div>
+                                    <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Tags</h3>
+                                    <div className="flex flex-wrap gap-2">
+                                        {selectedClip.tags && selectedClip.tags.map((tag: string) => (
+                                            <span key={tag} className="text-xs font-medium text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-full">
+                                                #{tag}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {selectedClip.type === 'url' && (
+                                    <div>
+                                        <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Source</h3>
+                                        <a href={selectedClip.src_url} target="_blank" className="flex items-center gap-2 text-sm text-white hover:text-indigo-400 transition-colors truncate">
+                                            <ExternalLink className="w-4 h-4" />
+                                            {selectedClip.src_url}
+                                        </a>
+                                    </div>
+                                )}
+                            </div>
+                            
+                            <div className="pt-6 mt-auto border-t border-white/5 flex gap-3 animate-in fade-in duration-200">
                                 <button 
                                     onClick={() => setIsEditing(true)}
                                     className="flex-1 bg-white text-black font-semibold py-3 rounded-xl hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2"
@@ -864,13 +927,14 @@ export default function Dashboard() {
                                 <button className="p-3 bg-white/5 hover:bg-white/10 rounded-xl text-white transition-colors border border-white/10">
                                     <Copy className="w-5 h-5" />
                                 </button>
-                            </>
-                        )}
-                    </div>
+                            </div>
+                        </>
+                    )}
                 </div>
-            </div>
-        </div>
+            </motion.div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
        {/* Add Memory Modal */}
        {isAddModalOpen && (
