@@ -1,0 +1,8 @@
+{
+  "deno.enable": true,
+  "deno.disablePaths": [
+    "web"
+  ],
+  "deno.unstable": true,
+  "deno.lint": true
+}
