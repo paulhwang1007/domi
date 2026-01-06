@@ -116,9 +116,7 @@ export default function LoginPage() {
       )}>
         {/* Logo */}
         <Link href="/">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-white to-zinc-400 flex items-center justify-center mb-8 shadow-lg shadow-white/10 cursor-pointer hover:scale-105 transition-transform">
-             <LayoutDashboard className="text-black w-5 h-5" />
-          </div>
+          <img src="/domi_icon.png" alt="Domi" className="w-12 h-12 mb-8 hover:scale-105 transition-transform" />
         </Link>
 
         {/* Dynamic Title */}
@@ -225,7 +223,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading || (isSignUp && passwordScore < 3)}
-            className="w-full bg-[#5d5dff] hover:bg-[#4b4be6] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-lg transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 mt-4"
+            className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-lg transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 mt-4"
           >
             {isLoading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
