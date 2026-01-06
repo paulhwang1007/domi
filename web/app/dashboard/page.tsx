@@ -9,7 +9,7 @@ import {
     LayoutGrid, List, Plus, Search, LogOut, Settings, 
     MoreVertical, Trash, ExternalLink, X, Image as ImageIcon,
     FileText, Link as LinkIcon, StickyNote, FolderPlus,
-    ChevronDown, Filter, Check, Ghost, Loader2, User, Copy, Pencil, Upload, Folder, ChevronRight, ImageOff,
+    ChevronDown, Filter, Check, CheckSquare, Ghost, Loader2, User, Copy, Pencil, Upload, Folder, ChevronRight, ImageOff,
     Sparkles, Send, MessageSquare
 } from 'lucide-react'
 import { z } from 'zod'
@@ -59,6 +59,8 @@ export default function Dashboard() {
   
   // Add Existing to Group State
   const [isAddToGroupModalOpen, setIsAddToGroupModalOpen] = useState(false)
+  const [addToGroupTab, setAddToGroupTab] = useState<'create' | 'existing'>('create')
+  const [existingToGroupSelection, setExistingToGroupSelection] = useState<Set<string>>(new Set())
 
   // Add Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
@@ -125,6 +127,23 @@ export default function Dashboard() {
   // File Upload State and Refs
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [dragActive, setDragActive] = useState(false)
+  const [isSelectionMode, setIsSelectionMode] = useState(false)
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
+
+  const toggleSelection = (id: string) => {
+      const newSelected = new Set(selectedItems)
+      if (newSelected.has(id)) {
+          newSelected.delete(id)
+      } else {
+          newSelected.add(id)
+      }
+      setSelectedItems(newSelected)
+  }
+
+  const handleBulkDelete = async () => {
+      // Stub for later
+      console.log('Delete items:', selectedItems)
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files && e.target.files[0]) {
@@ -256,6 +275,52 @@ export default function Dashboard() {
 
   const handleConfirmDelete = async () => {
       if (!deleteConfirmation) return
+
+      if (deleteConfirmation === 'bulk') {
+          const ids = Array.from(selectedItems)
+          
+          if (currentView === 'groups' && !activeGroupFilter) {
+               // Bulk Delete Groups
+               // 1. Uncategorize
+               await supabase.from('clips').update({ group_id: null }).in('group_id', ids)
+               // 2. Delete
+               const { error } = await supabase.from('groups').delete().in('id', ids)
+               
+               if (error) {
+                   alert('Failed to delete groups: ' + error.message)
+               } else {
+                   setGroups(groups.filter(g => !selectedItems.has(g.id)))
+                   setClips(clips.map(c => selectedItems.has(c.group_id) ? { ...c, group_id: null } : c))
+               }
+          } else {
+              // Bulk Delete Clips
+              const { error } = await supabase.from('clips').delete().in('id', ids)
+              if (error) {
+                  alert('Failed to delete items: ' + error.message)
+              } else {
+                  setClips(clips.filter(c => !selectedItems.has(c.id)))
+                  // Update group counts? Recalculating efficiently might be annoying but let's try
+                  const deletedClipObjects = clips.filter(c => selectedItems.has(c.id))
+                  const groupCountsToDecrement: Record<string, number> = {}
+                  deletedClipObjects.forEach(c => {
+                      if (c.group_id) {
+                          groupCountsToDecrement[c.group_id] = (groupCountsToDecrement[c.group_id] || 0) + 1
+                      }
+                  })
+                  
+                  if (Object.keys(groupCountsToDecrement).length > 0) {
+                      setGroups(groups.map(g => ({
+                          ...g,
+                          count: g.count - (groupCountsToDecrement[g.id] || 0)
+                      })))
+                  }
+              }
+          }
+          setSelectedItems(new Set())
+          setIsSelectionMode(false)
+          setDeleteConfirmation(null)
+          return
+      }
 
       if (deleteConfirmation === 'current' && selectedClip) {
           // Delete Memory
@@ -436,6 +501,64 @@ export default function Dashboard() {
                 </button>
              </div>
         )}
+
+        <div className="ml-auto flex items-center gap-3 pb-2">
+            {isSelectionMode ? (
+                <>
+                    <button 
+                        onClick={() => {
+                            if (selectedItems.size > 0) {
+                                // Trigger delete confirmation or direct delete
+                                // For now, let's use the existing delete confirmation modal logic or add a new one?
+                                // Let's just create a new 'bulk' delete state or reuse.
+                                // Reusing setDeleteConfirmation('bulk') might work if we handle it.
+                                setDeleteConfirmation('bulk')
+                            }
+                        }}
+                        disabled={selectedItems.size === 0}
+                        className="px-4 py-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-colors text-sm font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <Trash className="w-4 h-4" />
+                        Delete {selectedItems.size > 0 ? `(${selectedItems.size})` : ''}
+                    </button>
+                    <button 
+                        onClick={() => { setIsSelectionMode(false); setSelectedItems(new Set()) }}
+                        className="px-4 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-300 transition-colors text-sm font-medium"
+                    >
+                        Cancel
+                    </button>
+                </>
+            ) : (
+                <>
+                    <button 
+                        onClick={() => setIsSelectionMode(true)}
+                        className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors flex items-center justify-center"
+                        title="Select Items"
+                    >
+                        <CheckSquare className="w-4 h-4" />
+                    </button>
+                    <button 
+                        onClick={() => {
+                            if (currentView === 'groups' && !activeGroupFilter) {
+                                setIsGroupModalOpen(true)
+                            } else {
+                                if (activeGroupFilter) {
+                                    setNewItemForm(prev => ({...prev, groupId: activeGroupFilter}))
+                                    setIsAddToGroupModalOpen(true)
+                                } else {
+                                    setNewItemForm(prev => ({...prev, groupId: ''}))
+                                    setIsAddModalOpen(true)
+                                }
+                            }
+                        }}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition-colors text-sm font-semibold shadow-lg shadow-indigo-500/20"
+                    >
+                        <Plus className="w-4 h-4" />
+                        {currentView === 'groups' && !activeGroupFilter ? 'New Group' : 'Add Memory'}
+                    </button>
+                </>
+            )}
+        </div>
       </div>
 
       {currentView === 'groups' && !activeGroupFilter ? (
@@ -448,20 +571,35 @@ export default function Dashboard() {
                   </div>
               ) : (
                   <>
-                    {filteredGroups.map(group => (
-                        <div 
+                    {filteredGroups.map((group, index) => (
+                        <motion.div 
                             key={group.id} 
-                            onClick={() => { setActiveGroupFilter(group.id); setCurrentView('feed'); setSearchQuery('') }}
-                            className="aspect-square bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col items-center justify-center gap-4 hover:bg-white/10 hover:scale-[1.02] hover:shadow-xl hover:shadow-indigo-500/10 transition-all cursor-pointer group relative"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                            onClick={() => { 
+                                if (isSelectionMode) {
+                                    toggleSelection(group.id)
+                                } else {
+                                    setActiveGroupFilter(group.id); setCurrentView('feed'); setSearchQuery('') 
+                                }
+                            }}
+                            className={`aspect-square bg-white/5 border rounded-2xl p-6 flex flex-col items-center justify-center gap-4 hover:bg-white/10 hover:scale-[1.02] hover:shadow-xl hover:shadow-indigo-500/10 transition-all cursor-pointer group relative ${selectedItems.has(group.id) ? 'border-indigo-500 bg-indigo-500/10' : 'border-white/10'}`}
                         >
-                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button 
-                                        onClick={(e) => { e.stopPropagation(); setDeleteConfirmation(group.id) }}
-                                        className="p-2 rounded-full bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-colors border border-red-500/20"
-                                        title="Delete Group"
-                                    >
-                                        <Trash className="w-3 h-3" />
-                                    </button>
+                                <div className="absolute top-2 right-2 transition-opacity">
+                                    {isSelectionMode ? (
+                                        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedItems.has(group.id) ? 'bg-indigo-500 border-indigo-500' : 'border-white/30'}`}>
+                                            {selectedItems.has(group.id) && <Check className="w-3 h-3 text-white" />}
+                                        </div>
+                                    ) : (
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); setDeleteConfirmation(group.id) }}
+                                            className="p-2 opacity-0 group-hover:opacity-100 rounded-full bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all border border-red-500/20"
+                                            title="Delete Group"
+                                        >
+                                            <Trash className="w-3 h-3" />
+                                        </button>
+                                    )}
                                 </div>
                                 <div className={`w-16 h-16 rounded-2xl flex items-center justify-center bg-${group.color}-500/10 text-${group.color}-400 group-hover:scale-110 transition-transform`}>
                                     <Folder className="w-8 h-8" />
@@ -470,21 +608,13 @@ export default function Dashboard() {
                                     <h3 className="font-semibold text-white mb-1">{group.title}</h3>
                                     <p className="text-xs text-zinc-500">{group.count} memories</p>
                                 </div>
-                        </div>
+                        </motion.div>
                     ))}
                     
                     {/* Add Group Card - Only show if not searching or if explicitly desired behavior (leaving it visible during search might be confusing if it doesn't match query, but standard is usually to hide "add" cards during filtering unless specific design) 
                         For now, I will hide "Add Group" if searching to avoid clutter, or keep it as the last item if query is empty.
                     */}
-                    {!debouncedSearchQuery && (
-                        <div 
-                            className="aspect-square border-2 border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center gap-4 text-zinc-500 hover:text-white hover:border-white/20 hover:bg-white/5 transition-all cursor-pointer"
-                            onClick={() => setIsGroupModalOpen(true)}
-                        >
-                            <Plus className="w-8 h-8" />
-                            <span className="text-sm font-medium">New Group</span>
-                        </div>
-                    )}
+
                   </>
               )}
           </div>
@@ -534,10 +664,23 @@ export default function Dashboard() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: index * 0.05, ease: "easeOut" }}
                 key={clip.id} 
-                className="break-inside-avoid mb-6 group" 
-                onClick={() => { setSelectedClip(clip); setModalImageError(false); setIsEditing(false); setDeleteConfirmation(null); setEditForm({ title: clip.title || '', description: clip.description || '', tags: clip.tags ? clip.tags.join(', ') : '', groupId: clip.group_id || '' }) }}
+                className="break-inside-avoid mb-6 group relative" 
+                onClick={() => { 
+                    if (isSelectionMode) {
+                        toggleSelection(clip.id)
+                    } else {
+                        setSelectedClip(clip); setModalImageError(false); setIsEditing(false); setDeleteConfirmation(null); setEditForm({ title: clip.title || '', description: clip.description || '', tags: clip.tags ? clip.tags.join(', ') : '', groupId: clip.group_id || '' }) 
+                    }
+                }}
             >
-                <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 cursor-pointer">
+                {isSelectionMode && (
+                    <div className="absolute top-3 right-3 z-10">
+                         <div className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all bg-black/50 backdrop-blur-sm ${selectedItems.has(clip.id) ? 'bg-indigo-500 border-indigo-500' : 'border-white/50 hover:border-white'}`}>
+                            {selectedItems.has(clip.id) && <Check className="w-3.5 h-3.5 text-white" />}
+                        </div>
+                    </div>
+                )}
+                <div className={`bg-white/5 backdrop-blur-sm border rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 cursor-pointer ${selectedItems.has(clip.id) ? 'border-indigo-500 ring-1 ring-indigo-500 bg-indigo-500/5' : 'border-white/10'}`}>
                 
                 {clip.type === 'image' && (
                     <div className="relative">
@@ -592,23 +735,6 @@ export default function Dashboard() {
             ))
         )}
 
-        {/* Add Card */}
-        <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2 }}
-            onClick={() => {
-                if (activeGroupFilter) {
-                    setIsAddToGroupModalOpen(true)
-                } else {
-                    setIsAddModalOpen(true)
-                }
-            }}
-            className="break-inside-avoid mb-6 border-2 border-dashed border-white/10 rounded-2xl p-8 flex flex-col items-center justify-center text-zinc-500 hover:text-white hover:border-white/20 hover:bg-white/5 transition-all cursor-pointer h-64"
-        >
-            <Plus className="w-8 h-8 mb-2" />
-            <span className="text-sm font-medium">{activeGroupFilter ? 'Add existing memory' : 'Add new memory'}</span>
-        </motion.div>
       </div>
       )}
 
@@ -691,7 +817,7 @@ export default function Dashboard() {
                 <div className="w-full md:w-2/5 p-8 flex flex-col h-full bg-[#0E0C25] relative">
                     
                     {/* Tab Header */}
-                    <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl mb-6">
+                    <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl mb-6 mr-12">
                         <button
                              onClick={() => setIsChatOpen(false)}
                              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${!isChatOpen ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-400 hover:text-zinc-200'}`}
@@ -889,13 +1015,9 @@ export default function Dashboard() {
                                         </span>
                                     )}
                                 </div>
-                                <h2 className="text-3xl font-bold text-white mb-2">{selectedClip.title}</h2>
-                                {selectedClip.description && <p className="text-zinc-400 leading-relaxed">{selectedClip.description}</p>}
-                            </div>
+                                <h2 className="text-3xl font-bold text-white mb-4">{selectedClip.title}</h2>
 
-                            <div className="space-y-6 flex-1 animate-in fade-in duration-200">
-                                <div>
-                                    <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Tags</h3>
+                                <div className="space-y-4">
                                     <div className="flex flex-wrap gap-2">
                                         {selectedClip.tags && selectedClip.tags.map((tag: string) => (
                                             <span key={tag} className="text-xs font-medium text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-full">
@@ -903,17 +1025,18 @@ export default function Dashboard() {
                                             </span>
                                         ))}
                                     </div>
-                                </div>
 
-                                {selectedClip.type === 'url' && (
-                                    <div>
-                                        <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Source</h3>
-                                        <a href={selectedClip.src_url} target="_blank" className="flex items-center gap-2 text-sm text-white hover:text-indigo-400 transition-colors truncate">
+                                    {selectedClip.type === 'url' && (
+                                        <a href={selectedClip.src_url} target="_blank" className="flex items-center gap-2 text-sm text-zinc-400 hover:text-indigo-400 transition-colors truncate w-fit">
                                             <ExternalLink className="w-4 h-4" />
                                             {selectedClip.src_url}
                                         </a>
-                                    </div>
-                                )}
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto custom-scrollbar animate-in fade-in duration-200">
+                                {selectedClip.description && <p className="text-zinc-400 leading-relaxed whitespace-pre-wrap">{selectedClip.description}</p>}
                             </div>
                             
                             <div className="pt-6 mt-auto border-t border-white/5 flex gap-3 animate-in fade-in duration-200">
@@ -1320,7 +1443,19 @@ export default function Dashboard() {
                  </div>
                  
                  <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
-                     <p className="text-sm text-zinc-500 mb-4">Select a memory to move to this group:</p>
+                     <button 
+                        onClick={() => {
+                            setIsAddToGroupModalOpen(false)
+                            setNewItemForm(prev => ({...prev, groupId: activeGroupFilter}))
+                            setIsAddModalOpen(true)
+                        }}
+                        className="w-full mb-6 p-4 rounded-xl border-2 border-dashed border-white/10 hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all flex items-center justify-center gap-2 group"
+                     >
+                        <Plus className="w-5 h-5 text-zinc-400 group-hover:text-indigo-400" />
+                        <span className="font-medium text-zinc-400 group-hover:text-white">Create a new memory in this group</span>
+                     </button>
+
+                     <p className="text-sm text-zinc-500 mb-4 font-medium sticky top-0 bg-[#0E0C25] py-2 z-10">Or select an existing memory:</p>
                      
                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         {clips.filter(c => c.group_id !== activeGroupFilter).map(clip => (
