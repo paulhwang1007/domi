@@ -1,8 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "Domi - Capture & Organize",
+  "name": "Domi",
   "version": "0.1.0",
-  "description": "Save images, text, and URLs to your Domi library.",
+  "description": "Effortlessly capture visible areas, save pages, and organize your digital life with Domi's AI-powered second brain.",
+  "icons": {
+    "16": "domi_icon.png",
+    "48": "domi_icon.png",
+    "128": "domi_icon.png"
+  },
   "permissions": [
     "contextMenus",
     "activeTab",
@@ -19,7 +24,12 @@
     "service_worker": "background.js"
   },
   "action": {
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_icon": {
+        "16": "domi_icon.png",
+        "48": "domi_icon.png",
+        "128": "domi_icon.png"
+    }
   },
   "content_scripts": [
     {
