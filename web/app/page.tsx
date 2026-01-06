@@ -4,6 +4,7 @@ import { ArrowRight, Check, LayoutDashboard, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import { createClient } from "@/lib/supabase/server";
+import { ProfileDropdown } from "@/components/profile-dropdown";
 
 export default async function LandingPage() {
   const supabase = await createClient();
@@ -23,10 +24,9 @@ export default async function LandingPage() {
       <nav className="relative z-50 flex items-center justify-between px-6 py-6 md:px-12 max-w-7xl mx-auto">
         <div className="flex items-center gap-2">
           {/* Logo Icon */}
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-blue-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-            <LayoutDashboard className="text-white w-4 h-4" />
-          </div>
-          <span className="font-bold text-xl tracking-tight">Domi</span>
+          {/* Logo Icon */}
+          <img src="/domi_icon.png" alt="Domi Logo" className="w-8 h-8" />
+          <span className="text-2xl font-bold bg-gradient-to-r from-violet-500 to-purple-500 bg-clip-text text-transparent">Domi</span>
         </div>
 
         <div className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-300">
@@ -37,9 +37,7 @@ export default async function LandingPage() {
 
         <div className="flex items-center gap-4">
           {user ? (
-             <Link href="/dashboard" className="text-sm font-medium bg-white text-black hover:bg-zinc-200 px-5 py-2.5 rounded-full transition-all shadow-lg">
-                Go to Dashboard
-             </Link>
+             <ProfileDropdown user={user} />
           ) : (
             <>
               <Link href="/login" className="text-sm font-medium text-zinc-300 hover:text-white transition-colors">
@@ -75,13 +73,13 @@ export default async function LandingPage() {
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-md">
            {user ? (
              <Link href="/dashboard" className="w-full">
-                <button className="w-full bg-white text-black hover:bg-zinc-200 font-semibold h-12 px-6 rounded-lg transition-all shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)] flex items-center justify-center gap-2 text-[15px]">
+                <button className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold h-12 px-6 rounded-lg transition-all shadow-[0_0_40px_-10px_rgba(93,93,255,0.5)] flex items-center justify-center gap-2 text-[15px]">
                     Go to Dashboard <ArrowRight className="w-4 h-4" />
                 </button>
              </Link>
            ) : (
              <Link href="/login" className="w-full">
-              <button className="w-full bg-[#5d5dff] hover:bg-[#4b4be6] text-white font-semibold h-12 px-6 rounded-lg transition-all shadow-[0_0_40px_-10px_rgba(93,93,255,0.5)] flex items-center justify-center gap-2 text-[15px]">
+              <button className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold h-12 px-6 rounded-lg transition-all shadow-[0_0_40px_-10px_rgba(93,93,255,0.5)] flex items-center justify-center gap-2 text-[15px]">
                   Get started for free
               </button>
              </Link>
