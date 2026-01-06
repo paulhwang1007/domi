@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <style>
         body {
             width: 250px;
@@ -10,20 +11,24 @@
             margin: 0;
             padding: 16px;
         }
-        h2 {
-            margin: 0 0 16px 0;
-            font-size: 16px;
-            font-weight: 600;
-            color: #fff;
+        .header {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+            margin-bottom: 20px;
         }
-        .logo {
-            width: 20px;
-            height: 20px;
-            background: linear-gradient(135deg, #6366f1, #a855f7);
-            border-radius: 6px;
+        .logo-img {
+            width: 28px;
+            height: 28px;
+        }
+        .brand-text {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0;
+            background: linear-gradient(to right, #8b5cf6, #a855f7); /* Violet-500 to Purple-500 */
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
         }
         button {
             display: flex;
@@ -52,22 +57,25 @@
             opacity: 0.7;
         }
         #open-dashboard {
-            margin-top: 8px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            padding-top: 12px;
-            background: transparent;
+            margin-top: 16px;
+            background: linear-gradient(135deg, #6366f1, #a855f7);
             border: none;
-            color: #a1a1aa;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
         }
         #open-dashboard:hover {
-            color: white;
-            background: transparent;
+            background: linear-gradient(135deg, #5b5fc7, #964ce0);
+            transform: translateY(-1px);
         }
         
     </style>
 </head>
 <body>
-    <h2><div class="logo"></div> Domi</h2>
+    <div class="header">
+        <img src="domi_icon.png" class="logo-img" alt="Domi">
+        <div class="brand-text">Domi</div>
+    </div>
     
     <button id="save-page">
         <!-- Lucide Link Icon -->
@@ -82,7 +90,8 @@
     </button>
 
     <button id="open-dashboard">
-        Open Dashboard →
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+        Open Dashboard
     </button>
 
     <script src="popup.js"></script>
