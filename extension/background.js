@@ -340,18 +340,36 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
     }
     else if (request.action === "SAVE_SCREENSHOT") {
-         // Acknowledge receipt immediately
          sendResponse({ success: true });
-
-         chrome.tabs.captureVisibleTab(null, { format: 'png' }, (dataUrl) => {
-             if (chrome.runtime.lastError) {
-                 console.error(chrome.runtime.lastError);
-                 return;
+         
+         // Trigger selection UI in content script
+         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+             if (tabs[0]) {
+                 chrome.tabs.sendMessage(tabs[0].id, { action: "START_SELECTION" });
              }
-             chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-                 if (tabs[0]) saveScreenshot(dataUrl, tabs[0]);
-             });
          });
+    }
+    else if (request.action === "CAPTURE_VISIBLE_AREA") {
+        const area = request.area;
+        chrome.tabs.captureVisibleTab(null, { format: 'png' }, (dataUrl) => {
+            // Send back to content script for cropping (since background can't use Canvas easily)
+             chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                 if (tabs[0]) {
+                     chrome.tabs.sendMessage(tabs[0].id, { 
+                        action: "CROP_IMAGE",
+                        dataUrl: dataUrl,
+                        area: area
+                     });
+                 }
+             });
+        });
+        sendResponse({ success: true }); // Ack (optional)
+    }
+    else if (request.action === "UPLOAD_CROPPED_IMAGE") {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (tabs[0]) saveScreenshot(request.dataUrl, tabs[0]);
+        });
+        sendResponse({ success: true });
     }
 });
 

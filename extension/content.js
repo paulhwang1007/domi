@@ -111,6 +111,115 @@ function createToast(clip) {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "SHOW_TOAST") {
         createToast(request.clip);
+    } 
+    else if (request.action === "START_SELECTION") {
+        initAreaSelection();
+    }
+    else if (request.action === "CROP_IMAGE") {
+        cropAndUpload(request.dataUrl, request.area);
     }
 });
+
+function initAreaSelection() {
+    // 1. Create Overlay
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100vw';
+    overlay.style.height = '100vh';
+    overlay.style.zIndex = '2147483646'; // Just below toast
+    overlay.style.cursor = 'crosshair';
+    overlay.style.background = 'rgba(0,0,0,0.3)';
+    
+    document.body.appendChild(overlay);
+
+    let startX, startY, isSelecting = false;
+    const selectionBox = document.createElement('div');
+    selectionBox.style.position = 'fixed';
+    selectionBox.style.border = '2px solid #a855f7';
+    selectionBox.style.background = 'rgba(168, 85, 247, 0.1)';
+    selectionBox.style.zIndex = '2147483647';
+    overlay.appendChild(selectionBox);
+
+    const onMouseDown = (e) => {
+        isSelecting = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        selectionBox.style.left = startX + 'px';
+        selectionBox.style.top = startY + 'px';
+        selectionBox.style.width = '0px';
+        selectionBox.style.height = '0px';
+        e.preventDefault();
+        e.stopPropagation();
+    };
+
+    const onMouseMove = (e) => {
+        if (!isSelecting) return;
+        const currentX = e.clientX;
+        const currentY = e.clientY;
+        
+        const width = Math.abs(currentX - startX);
+        const height = Math.abs(currentY - startY);
+        const left = Math.min(currentX, startX);
+        const top = Math.min(currentY, startY);
+
+        selectionBox.style.width = width + 'px';
+        selectionBox.style.height = height + 'px';
+        selectionBox.style.left = left + 'px';
+        selectionBox.style.top = top + 'px';
+    };
+
+    const onMouseUp = (e) => {
+        if (!isSelecting) return;
+        isSelecting = false;
+        
+        const rect = selectionBox.getBoundingClientRect();
+        
+        // Remove UI
+        document.body.removeChild(overlay);
+        
+        if (rect.width > 10 && rect.height > 10) {
+            // Send coordinates to background to capture screen
+            // Account for device pixel ratio
+            const scale = window.devicePixelRatio;
+            const area = {
+                x: rect.left * scale,
+                y: rect.top * scale,
+                width: rect.width * scale,
+                height: rect.height * scale
+            };
+            
+            chrome.runtime.sendMessage({ 
+                action: "CAPTURE_VISIBLE_AREA", 
+                area: area 
+            });
+        }
+    };
+
+    overlay.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+}
+
+function cropAndUpload(dataUrl, area) {
+    const img = new Image();
+    img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = area.width;
+        canvas.height = area.height;
+        const ctx = canvas.getContext('2d');
+        
+        ctx.drawImage(img, area.x, area.y, area.width, area.height, 0, 0, area.width, area.height);
+        
+        const croppedDataUrl = canvas.toDataURL('image/png');
+        
+        // Send back to background to upload
+        chrome.runtime.sendMessage({
+            action: "UPLOAD_CROPPED_IMAGE",
+            dataUrl: croppedDataUrl
+        });
+    };
+    img.src = dataUrl;
+}
 } // End of initialization guard
