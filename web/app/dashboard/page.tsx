@@ -10,8 +10,9 @@ import {
     MoreVertical, Trash, ExternalLink, X, Image as ImageIcon,
     FileText, Link as LinkIcon, StickyNote, FolderPlus, FolderMinus,
     ChevronDown, Filter, Check, CheckSquare, Ghost, Loader2, User, Copy, Pencil, Upload, Folder, ChevronRight, ImageOff,
-    Sparkles, Send, MessageSquare, RefreshCw
+    Sparkles, Send, MessageSquare, RefreshCw, Sun, Moon, Laptop
 } from 'lucide-react'
+import { useTheme } from 'next-themes'
 import { z } from 'zod'
 
 // --- Validation Schemas ---
@@ -34,6 +35,9 @@ export default function Dashboard() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const settingsRef = useRef<HTMLDivElement>(null)
+  const { setTheme, theme } = useTheme()
   
   // Validation State
   const [formErrors, setFormErrors] = useState<string[]>([])
@@ -199,6 +203,9 @@ export default function Dashboard() {
     const handleClickOutside = (event: MouseEvent) => {
         if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
             setIsProfileOpen(false)
+        }
+        if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
+            setIsSettingsOpen(false)
         }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -432,18 +439,18 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen p-6 md:p-8">
       {/* Header */}
-      <header className="flex items-center justify-between mb-8 sticky top-0 z-50 bg-background/50 backdrop-blur-md py-4 -mx-6 px-6 border-b border-white/5">
+      <header className="flex items-center justify-between mb-8 sticky top-0 z-50 bg-background/80 backdrop-blur-md py-4 -mx-6 px-6 border-b border-border">
         <div className="flex items-center gap-4">
           <Link href="/">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">Domi</h1>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">Domi</h1>
           </Link>
           
-          <div className="hidden md:flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-3 py-1.5 hover:bg-white/10 transition-colors cursor-text w-64 focus-within:ring-2 focus-within:ring-indigo-500/50 focus-within:border-transparent">
-            <Search className="w-4 h-4 text-zinc-500" />
+          <div className="hidden md:flex items-center gap-2 bg-secondary/50 border border-border rounded-full px-3 py-1.5 hover:bg-secondary/80 transition-colors cursor-text w-64 focus-within:ring-2 focus-within:ring-indigo-500/50 focus-within:border-transparent">
+            <Search className="w-4 h-4 text-muted-foreground" />
             <input 
                 type="text" 
                 placeholder="Search your mind..." 
-                className="bg-transparent border-none outline-none text-sm text-white placeholder-zinc-500 w-full" 
+                className="bg-transparent border-none outline-none text-sm text-foreground placeholder:text-muted-foreground w-full" 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -454,33 +461,69 @@ export default function Dashboard() {
             <button 
                 onClick={fetchData}
                 disabled={loading}
-                className={`p-2 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`p-2 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground transition-colors ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 title="Refresh Feed"
             >
                 <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
             </button>
-            <button className="p-2 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors">
-                <Settings className="w-5 h-5" />
-            </button>
+            <div className="relative" ref={settingsRef}>
+                <button 
+                    onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                    className="p-2 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                >
+                    <Settings className="w-5 h-5" />
+                </button>
+
+                {isSettingsOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-popover border border-border rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-50">
+                        <div className="p-3 border-b border-border">
+                            <p className="text-xs font-medium text-muted-foreground mb-2">Appearance</p>
+                            <div className="flex items-center gap-1 bg-secondary/50 p-1 rounded-lg">
+                                <button 
+                                    onClick={() => setTheme("light")} 
+                                    className={`flex-1 p-1.5 rounded-md flex items-center justify-center transition-colors ${theme === 'light' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                    title="Light Mode"
+                                >
+                                    <Sun className="w-4 h-4" />
+                                </button>
+                                <button 
+                                    onClick={() => setTheme("dark")} 
+                                    className={`flex-1 p-1.5 rounded-md flex items-center justify-center transition-colors ${theme === 'dark' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                    title="Dark Mode"
+                                >
+                                    <Moon className="w-4 h-4" />
+                                </button>
+                                <button 
+                                    onClick={() => setTheme("system")} 
+                                    className={`flex-1 p-1.5 rounded-md flex items-center justify-center transition-colors ${theme === 'system' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                    title="System"
+                                >
+                                    <Laptop className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
             
             <div className="relative" ref={profileRef}>
                 <button 
                     onClick={() => setIsProfileOpen(!isProfileOpen)}
-                    className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 border border-white/20 hover:scale-105 transition-transform flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-white/20"
+                    className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 border border-border hover:scale-105 transition-transform flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-ring"
                 >
                     {!user?.user_metadata?.avatar_url && <User className="w-4 h-4 text-white/50" />}
                 </button>
 
                 {/* Dropdown Menu */}
                 {isProfileOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-48 bg-[#0E0C25] border border-white/10 rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                        <div className="p-3 border-b border-white/5">
-                            <p className="text-xs text-zinc-400 font-medium truncate">{user?.email}</p>
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-popover border border-border rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        <div className="p-3 border-b border-border">
+                            <p className="text-xs text-muted-foreground font-medium truncate">{user?.email}</p>
                         </div>
                         <div className="p-1">
                             <button 
                                 onClick={handleSignOut}
-                                className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2"
+                                className="w-full text-left px-3 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-lg transition-colors flex items-center gap-2"
                             >
                                 <LogOut className="w-4 h-4" />
                                 Log out
@@ -493,13 +536,13 @@ export default function Dashboard() {
       </header>
 
       {/* View Switcher / Navigation */}
-      <div className="flex items-center gap-6 mb-8 border-b border-white/5 pb-1">
+      <div className="flex items-center gap-6 mb-8 border-b border-border pb-1">
         <button 
             onClick={() => { setCurrentView('feed'); setActiveGroupFilter(null) }}
             className={`flex items-center gap-2 pb-3 px-1 text-sm font-medium transition-all relative ${
                 currentView === 'feed' && !activeGroupFilter
-                ? 'text-white after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-indigo-500 after:rounded-full after:shadow-[0_0_12px_rgba(99,102,241,0.5)]' 
-                : 'text-zinc-500 hover:text-zinc-300'
+                ? 'text-foreground after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-indigo-500 after:rounded-full after:shadow-[0_0_12px_rgba(99,102,241,0.5)]' 
+                : 'text-muted-foreground hover:text-foreground'
             }`}
         >
             <LayoutGrid className="w-4 h-4" />
@@ -509,8 +552,8 @@ export default function Dashboard() {
             onClick={() => { setCurrentView('groups'); setActiveGroupFilter(null) }}
             className={`flex items-center gap-2 pb-3 px-1 text-sm font-medium transition-all relative ${
                 currentView === 'groups' 
-                ? 'text-white after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-indigo-500 after:rounded-full after:shadow-[0_0_12px_rgba(99,102,241,0.5)]' 
-                : 'text-zinc-500 hover:text-zinc-300'
+                ? 'text-foreground after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-indigo-500 after:rounded-full after:shadow-[0_0_12px_rgba(99,102,241,0.5)]' 
+                : 'text-muted-foreground hover:text-foreground'
             }`}
         >
             <Folder className="w-4 h-4" />
@@ -518,12 +561,12 @@ export default function Dashboard() {
         </button>
 
         {activeGroupFilter && (
-             <div className="flex items-center gap-2 pb-3 px-1 text-sm font-medium text-white relative after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-indigo-500 after:rounded-full after:shadow-[0_0_12px_rgba(99,102,241,0.5)]">
-                <ChevronRight className="w-4 h-4 text-zinc-600" />
+             <div className="flex items-center gap-2 pb-3 px-1 text-sm font-medium text-foreground relative after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-indigo-500 after:rounded-full after:shadow-[0_0_12px_rgba(99,102,241,0.5)]">
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
                 <span className="text-indigo-400">{groups.find(g => g.id === activeGroupFilter)?.title}</span>
                 <button 
                     onClick={() => setActiveGroupFilter(null)}
-                    className="ml-2 bg-white/10 hover:bg-white/20 p-0.5 rounded-full transition-colors"
+                    className="ml-2 bg-secondary hover:bg-secondary/80 p-0.5 rounded-full transition-colors"
                 >
                     <X className="w-3 h-3" />
                 </button>
@@ -559,14 +602,14 @@ export default function Dashboard() {
                             }
                         }}
                         disabled={selectedItems.size === 0}
-                        className="px-4 py-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-colors text-sm font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-4 py-1.5 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-colors text-sm font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <Trash className="w-4 h-4" />
                         Delete {selectedItems.size > 0 ? `(${selectedItems.size})` : ''}
                     </button>
                     <button 
                         onClick={() => { setIsSelectionMode(false); setSelectedItems(new Set()) }}
-                        className="px-4 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-300 transition-colors text-sm font-medium"
+                        className="px-4 py-1.5 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground transition-colors text-sm font-medium"
                     >
                         Cancel
                     </button>
@@ -575,7 +618,7 @@ export default function Dashboard() {
                 <>
                     <button 
                         onClick={() => setIsSelectionMode(true)}
-                        className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors flex items-center justify-center"
+                        className="w-8 h-8 rounded-lg bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center"
                         title="Select Items"
                     >
                         <CheckSquare className="w-4 h-4" />
@@ -608,9 +651,9 @@ export default function Dashboard() {
           /* Groups Grid View */
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
               {filteredGroups.length === 0 && debouncedSearchQuery ? (
-                  <div className="col-span-full h-64 flex flex-col items-center justify-center text-zinc-500 animate-in fade-in duration-300">
+                  <div className="col-span-full h-64 flex flex-col items-center justify-center text-muted-foreground animate-in fade-in duration-300">
                       <Folder className="w-12 h-12 mb-4 opacity-50" />
-                      <p className="text-lg font-medium text-white/50">No groups found for "{debouncedSearchQuery}"</p>
+                      <p className="text-lg font-medium text-muted-foreground">No groups found for "{debouncedSearchQuery}"</p>
                   </div>
               ) : (
                   <>
@@ -627,17 +670,17 @@ export default function Dashboard() {
                                     setActiveGroupFilter(group.id); setCurrentView('feed'); setSearchQuery('') 
                                 }
                             }}
-                            className={`aspect-square bg-white/5 border rounded-2xl p-6 flex flex-col items-center justify-center gap-4 hover:bg-white/10 hover:scale-[1.02] hover:shadow-xl hover:shadow-indigo-500/10 transition-all cursor-pointer group relative ${selectedItems.has(group.id) ? 'border-indigo-500 bg-indigo-500/10' : 'border-white/10'}`}
+                            className={`aspect-square bg-card border rounded-2xl p-6 flex flex-col items-center justify-center gap-4 hover:bg-accent hover:scale-[1.02] hover:shadow-xl hover:shadow-indigo-500/10 transition-all cursor-pointer group relative ${selectedItems.has(group.id) ? 'border-indigo-500 bg-indigo-500/10' : 'border-border'}`}
                         >
                                 <div className="absolute top-2 right-2 transition-opacity">
                                     {isSelectionMode ? (
-                                        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedItems.has(group.id) ? 'bg-indigo-500 border-indigo-500' : 'border-white/30'}`}>
+                                        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedItems.has(group.id) ? 'bg-indigo-500 border-indigo-500' : 'border-border'}`}>
                                             {selectedItems.has(group.id) && <Check className="w-3 h-3 text-white" />}
                                         </div>
                                     ) : (
                                         <button 
                                             onClick={(e) => { e.stopPropagation(); setDeleteConfirmation(group.id) }}
-                                            className="p-2 opacity-0 group-hover:opacity-100 rounded-full bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all border border-red-500/20"
+                                            className="p-2 opacity-0 group-hover:opacity-100 rounded-full bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-all border border-destructive/20"
                                             title="Delete Group"
                                         >
                                             <Trash className="w-3 h-3" />
@@ -648,8 +691,8 @@ export default function Dashboard() {
                                     <Folder className="w-8 h-8" />
                                 </div>
                                 <div className="text-center">
-                                    <h3 className="font-semibold text-white mb-1">{group.title}</h3>
-                                    <p className="text-xs text-zinc-500">{group.count} memories</p>
+                                    <h3 className="font-semibold text-foreground mb-1">{group.title}</h3>
+                                    <p className="text-xs text-muted-foreground">{group.count} memories</p>
                                 </div>
                         </motion.div>
                     ))}
@@ -668,7 +711,7 @@ export default function Dashboard() {
         /* Loading Skeletons */
         <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
              {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="break-inside-avoid mb-6 bg-white/5 border border-white/5 rounded-2xl h-64 animate-pulse relative overflow-hidden">
+                <div key={i} className="break-inside-avoid mb-6 bg-card border border-border rounded-2xl h-64 animate-pulse relative overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-full animate-[shimmer_1.5s_infinite]" />
                 </div>
              ))}
@@ -683,14 +726,14 @@ export default function Dashboard() {
               <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-indigo-500/20 to-purple-500/20 flex items-center justify-center mb-6">
                   <Sparkles className="w-12 h-12 text-indigo-400 animate-pulse" />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-2">Welcome to your External Brain</h2>
-              <p className="text-zinc-400 max-w-md mb-8">
+              <h2 className="text-2xl font-bold text-foreground mb-2">Welcome to your External Brain</h2>
+              <p className="text-muted-foreground max-w-md mb-8">
                   Domi helps you capture, organize, and chat with your digital life. 
                   Start by adding your first memory.
               </p>
               <button 
                   onClick={() => setIsAddModalOpen(true)}
-                  className="px-8 py-3 bg-white text-black font-bold rounded-full hover:scale-105 transition-transform shadow-[0_0_20px_rgba(255,255,255,0.3)] flex items-center gap-2"
+                  className="px-8 py-3 bg-primary text-primary-foreground font-bold rounded-full hover:scale-105 transition-transform shadow-[0_0_20px_rgba(79,70,229,0.3)] flex items-center gap-2"
               >
                   <Plus className="w-5 h-5" />
                   Create Memory
@@ -699,12 +742,12 @@ export default function Dashboard() {
       ) : filteredClips.length === 0 ? (
           /* No Search Results or Group Empty */
           activeGroupFilter && !debouncedSearchQuery ? (
-               <div className="col-span-full h-[50vh] flex flex-col items-center justify-center text-center p-8 border-2 border-dashed border-white/5 rounded-3xl bg-white/5 animate-in fade-in duration-300">
+               <div className="col-span-full h-[50vh] flex flex-col items-center justify-center text-center p-8 border-2 border-dashed border-border rounded-3xl bg-secondary/20 animate-in fade-in duration-300">
                     <div className="w-20 h-20 rounded-full bg-indigo-500/10 flex items-center justify-center mb-6">
                         <FolderPlus className="w-10 h-10 text-indigo-400" />
                     </div>
-                    <h2 className="text-xl font-bold text-white mb-2">This group is empty</h2>
-                    <p className="text-zinc-400 mb-6 max-w-sm">
+                    <h2 className="text-xl font-bold text-foreground mb-2">This group is empty</h2>
+                    <p className="text-muted-foreground mb-6 max-w-sm">
                         Start building this collection by adding relevant memories.
                     </p>
                     <button 
@@ -719,9 +762,9 @@ export default function Dashboard() {
                     </button>
                </div>
           ) : (
-          <div className="col-span-full h-64 flex flex-col items-center justify-center text-zinc-500 animate-in fade-in duration-300">
+          <div className="col-span-full h-64 flex flex-col items-center justify-center text-muted-foreground animate-in fade-in duration-300">
               <Search className="w-12 h-12 mb-4 opacity-50" />
-              <p className="text-lg font-medium text-white/50">No memories found for "{debouncedSearchQuery}"</p>
+              <p className="text-lg font-medium text-muted-foreground">No memories found for "{debouncedSearchQuery}"</p>
               <p className="text-sm">Try a different keyword or tag</p>
           </div>
           )
@@ -751,12 +794,12 @@ export default function Dashboard() {
                             </div>
                         </div>
                     )}
-                    <div className={`bg-white/5 backdrop-blur-sm border rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 cursor-pointer ${selectedItems.has(clip.id) ? 'border-indigo-500 ring-1 ring-indigo-500 bg-indigo-500/5' : 'border-white/10'}`}>
+                    <div className={`bg-card backdrop-blur-sm border rounded-2xl overflow-hidden hover:border-border/80 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 cursor-pointer ${selectedItems.has(clip.id) ? 'border-indigo-500 ring-1 ring-indigo-500 bg-indigo-500/5' : 'border-border'}`}>
                     
                     {clip.type === 'image' && (
                         <div className="relative">
                             {failedImages.has(clip.id) ? (
-                                <div className="w-full aspect-video bg-white/5 flex flex-col items-center justify-center text-zinc-600">
+                                <div className="w-full aspect-video bg-secondary flex flex-col items-center justify-center text-muted-foreground">
                                     <ImageOff className="w-8 h-8 mb-2 opacity-50" />
                                     <span className="text-xs font-medium">Image not found</span>
                                 </div>
@@ -774,7 +817,7 @@ export default function Dashboard() {
                     
                     {clip.type === 'text' && (
                         <div className="p-6 bg-gradient-to-br from-indigo-500/10 to-transparent">
-                            <p className="font-serif text-lg text-white/90 leading-relaxed">"{clip.content}"</p>
+                            <p className="font-serif text-lg text-foreground/90 leading-relaxed">"{clip.content}"</p>
                         </div>
                     )}
 
@@ -789,7 +832,7 @@ export default function Dashboard() {
                                 </div>
                              </div>
                         ) : (
-                            <div className="h-32 bg-zinc-900 flex items-center justify-center text-zinc-600">
+                            <div className="h-32 bg-secondary flex items-center justify-center text-muted-foreground">
                                 <span className="text-4xl font-bold opacity-20">URL</span>
                             </div>
                         )
@@ -802,12 +845,12 @@ export default function Dashboard() {
                     )}
 
                     <div className="p-4">
-                        <h3 className="font-medium text-white mb-2 group-hover:text-indigo-400 transition-colors">{clip.title}</h3>
-                        {clip.description && <p className="text-xs text-zinc-500 mb-3">{clip.description}</p>}
+                        <h3 className="font-medium text-foreground mb-2 group-hover:text-indigo-400 transition-colors">{clip.title}</h3>
+                        {clip.description && <p className="text-xs text-muted-foreground mb-3">{clip.description}</p>}
                         
                         <div className="flex flex-wrap gap-2">
                             {clip.tags && clip.tags.map((tag: string) => (
-                                <span key={tag} className="text-[10px] uppercase tracking-wider font-semibold text-zinc-500 bg-white/5 px-2 py-1 rounded-md">{tag}</span>
+                                <span key={tag} className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground bg-secondary px-2 py-1 rounded-md">{tag}</span>
                             ))}
                         </div>
                     </div>
@@ -840,7 +883,7 @@ export default function Dashboard() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="relative w-full max-w-6xl h-[92vh] md:h-[85vh] bg-[#0E0C25] border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row isolate"
+                className="relative w-full max-w-6xl h-[92vh] md:h-[85vh] bg-background border border-border rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row isolate"
             >
                 <div className="absolute top-4 right-4 z-20 flex gap-2">
                     <button 
@@ -854,9 +897,9 @@ export default function Dashboard() {
                 <div className="w-full md:w-3/5 bg-black/40 flex items-center justify-center p-8 border-b md:border-b-0 md:border-r border-white/5 relative overflow-hidden">
                      {selectedClip.type === 'image' && (
                         modalImageError ? (
-                            <motion.div layout className="flex flex-col items-center justify-center text-zinc-600">
+                            <motion.div layout className="flex flex-col items-center justify-center text-muted-foreground">
                                 <ImageOff className="w-16 h-16 mb-4 opacity-50" />
-                                <p className="text-lg font-medium text-zinc-500">Failed to load image</p>
+                                <p className="text-lg font-medium text-muted-foreground">Failed to load image</p>
                             </motion.div>
                         ) : (
                            <motion.img 
@@ -870,23 +913,23 @@ export default function Dashboard() {
                      
                      {selectedClip.type === 'text' && (
                          <motion.div layout className="max-w-lg max-h-full overflow-y-auto custom-scrollbar p-2">
-                            <motion.p layout className="font-serif text-xl md:text-2xl text-white/90 leading-relaxed whitespace-pre-wrap">"{selectedClip.content}"</motion.p>
+                            <motion.p layout className="font-serif text-xl md:text-2xl text-foreground/90 leading-relaxed whitespace-pre-wrap">"{selectedClip.content}"</motion.p>
                          </motion.div>
                      )}
 
                      {selectedClip.type === 'url' && (
                          <div className="text-center w-full h-full flex flex-col items-center justify-center p-8">
                              {(selectedClip.metadata as any)?.og_image ? (
-                                <div className="w-full max-w-lg aspect-video rounded-2xl overflow-hidden shadow-2xl mb-8 relative group border border-white/10">
+                                <div className="w-full max-w-lg aspect-video rounded-2xl overflow-hidden shadow-2xl mb-8 relative group border border-border">
                                     <img src={(selectedClip.metadata as any).og_image} className="w-full h-full object-cover" alt="Preview" />
                                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
                                 </div>
                              ) : (
-                                <div className="w-32 h-32 rounded-2xl bg-zinc-800 flex items-center justify-center mb-6 mx-auto shadow-xl">
-                                    <span className="text-4xl font-bold text-zinc-600">URL</span>
+                                <div className="w-32 h-32 rounded-2xl bg-secondary flex items-center justify-center mb-6 mx-auto shadow-xl">
+                                    <span className="text-4xl font-bold text-muted-foreground">URL</span>
                                 </div>
                              )}
-                             <a href={selectedClip.src_url} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-4 text-lg font-medium break-all max-w-md line-clamp-2 text-center">
+                             <a href={selectedClip.src_url} target="_blank" rel="noopener noreferrer" className="text-indigo-900 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 underline underline-offset-4 text-lg font-semibold break-all max-w-md line-clamp-2 text-center">
                                  {selectedClip.src_url}
                              </a>
                          </div>
@@ -901,19 +944,19 @@ export default function Dashboard() {
                      )}
                 </div>
 
-                <div className="w-full md:w-2/5 p-8 flex flex-col h-full bg-[#0E0C25] relative">
+                <div className="w-full md:w-2/5 p-8 flex flex-col h-full bg-background relative">
                     
                     {/* Tab Header */}
-                    <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl mb-6 mr-12">
+                    <div className="flex items-center gap-1 bg-secondary/50 p-1 rounded-xl mb-6 mr-12">
                         <button
                              onClick={() => setIsChatOpen(false)}
-                             className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${!isChatOpen ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-400 hover:text-zinc-200'}`}
+                             className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${!isChatOpen ? 'bg-secondary text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                         >
                             <span className="text-xs font-bold uppercase tracking-wider">Details</span>
                         </button>
                         <button
                              onClick={() => setIsChatOpen(true)}
-                             className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${isChatOpen ? 'bg-indigo-600 text-white shadow-sm' : 'text-zinc-400 hover:text-zinc-200'}`}
+                             className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${isChatOpen ? 'bg-indigo-600 text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                         >
                             <Sparkles className="w-4 h-4" />
                             <span className="text-xs font-bold uppercase tracking-wider">Chat</span>
@@ -925,12 +968,12 @@ export default function Dashboard() {
                              {/* Chat Messages */}
                              <div className="flex-1 overflow-y-auto -mx-8 px-8 space-y-4 custom-scrollbar">
                                 {chatMessages.length === 0 && (
-                                    <div className="h-full flex flex-col items-center justify-center text-center p-6 text-zinc-500 space-y-4">
-                                        <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
+                                    <div className="h-full flex flex-col items-center justify-center text-center p-6 text-muted-foreground space-y-4">
+                                        <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center">
                                             <MessageSquare className="w-6 h-6" />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-medium text-white">Ask me anything!</p>
+                                            <p className="text-sm font-medium text-foreground">Ask me anything!</p>
                                             <p className="text-xs mt-1">"Summarize this", "What are the key takeaways?", "Explain like I'm 5"</p>
                                         </div>
                                     </div>
@@ -944,7 +987,7 @@ export default function Dashboard() {
                                         <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                                             msg.role === 'user' 
                                             ? 'bg-indigo-600 text-white rounded-tr-sm' 
-                                            : 'bg-white/10 text-zinc-200 rounded-tl-sm'
+                                            : 'bg-secondary text-foreground rounded-tl-sm'
                                         }`}>
                                             {msg.content}
                                         </div>
@@ -952,10 +995,10 @@ export default function Dashboard() {
                                 ))}
                                 {isChatLoading && (
                                      <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                        <div className="bg-white/5 rounded-2xl px-4 py-3 rounded-tl-sm flex gap-1 items-center">
-                                            <motion.div className="w-1.5 h-1.5 bg-zinc-400 rounded-full" animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.6, ease: "easeInOut" }} />
-                                            <motion.div className="w-1.5 h-1.5 bg-zinc-400 rounded-full" animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.6, ease: "easeInOut", delay: 0.1 }} />
-                                            <motion.div className="w-1.5 h-1.5 bg-zinc-400 rounded-full" animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.6, ease: "easeInOut", delay: 0.2 }} />
+                                        <div className="bg-secondary rounded-2xl px-4 py-3 rounded-tl-sm flex gap-1 items-center">
+                                            <motion.div className="w-1.5 h-1.5 bg-muted-foreground rounded-full" animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.6, ease: "easeInOut" }} />
+                                            <motion.div className="w-1.5 h-1.5 bg-muted-foreground rounded-full" animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.6, ease: "easeInOut", delay: 0.1 }} />
+                                            <motion.div className="w-1.5 h-1.5 bg-muted-foreground rounded-full" animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.6, ease: "easeInOut", delay: 0.2 }} />
                                         </div>
                                      </div>
                                 )}
@@ -963,12 +1006,12 @@ export default function Dashboard() {
                              </div>
 
                              {/* Chat Input */}
-                             <div className="pt-6 mt-4 border-t border-white/5">
+                             <div className="pt-6 mt-4 border-t border-border">
                                 <div className="relative">
                                     <input 
                                         type="text" 
                                         placeholder="ask a question..." 
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl pl-4 pr-12 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                        className="w-full bg-secondary/50 border border-border rounded-xl pl-4 pr-12 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                                         value={chatInput}
                                         onChange={(e) => setChatInput(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && !isChatLoading && handleSendMessage()}
@@ -988,50 +1031,50 @@ export default function Dashboard() {
                         /* Edit Mode Form */
                         <div className="flex-1 flex flex-col gap-5 animate-in fade-in duration-200">
                              <div className="space-y-1">
-                                <label className="text-xs font-semibold text-zinc-400">Title</label>
+                                <label className="text-xs font-semibold text-muted-foreground">Title</label>
                                 <input 
                                     type="text" 
                                     value={editForm.title} 
                                     onChange={(e) => setEditForm({...editForm, title: e.target.value})}
-                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                    className="w-full bg-secondary/50 border border-border rounded-lg px-3 py-2 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                                 />
                              </div>
 
                              <div className="space-y-1">
-                                <label className="text-xs font-semibold text-zinc-400">Description</label>
+                                <label className="text-xs font-semibold text-muted-foreground">Description</label>
                                 <textarea 
                                     value={editForm.description} 
                                     onChange={(e) => setEditForm({...editForm, description: e.target.value})}
                                     rows={3}
-                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 resize-none"
+                                    className="w-full bg-secondary/50 border border-border rounded-lg px-3 py-2 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/50 resize-none"
                                 />
                              </div>
 
                              <div className="space-y-1">
-                                <label className="text-xs font-semibold text-zinc-400">Tags (comma separated)</label>
+                                <label className="text-xs font-semibold text-muted-foreground">Tags (comma separated)</label>
                                 <input 
                                     type="text" 
                                     value={editForm.tags} 
                                     onChange={(e) => setEditForm({...editForm, tags: e.target.value})}
-                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                    className="w-full bg-secondary/50 border border-border rounded-lg px-3 py-2 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                                 />
                              </div>
 
                              <div className="space-y-1">
-                                <label className="text-xs font-semibold text-zinc-400">Group</label>
+                                <label className="text-xs font-semibold text-muted-foreground">Group</label>
                                 <select 
                                     value={editForm.groupId}
                                     onChange={(e) => setEditForm({...editForm, groupId: e.target.value})}
-                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 appearance-none"
+                                    className="w-full bg-secondary/50 border border-border rounded-lg px-3 py-2 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/50 appearance-none"
                                 >
-                                    <option value="" className="bg-[#0E0C25]">No Group</option>
+                                    <option value="" className="bg-popover text-foreground">No Group</option>
                                     {groups.map(g => (
-                                        <option key={g.id} value={g.id} className="bg-[#0E0C25]">{g.title}</option>
+                                        <option key={g.id} value={g.id} className="bg-popover text-foreground">{g.title}</option>
                                     ))}
                                 </select>
                              </div>
                              
-                             <div className="pt-6 mt-auto border-t border-white/5 flex gap-3">
+                             <div className="pt-6 mt-auto border-t border-border flex gap-3">
                                 <button 
                                     onClick={async () => {
                                         // Save Logic (Supabase Update)
@@ -1072,7 +1115,7 @@ export default function Dashboard() {
                                 <div className="flex gap-3">
                                     <button 
                                         onClick={() => setIsEditing(false)}
-                                        className="px-6 bg-white/5 hover:bg-white/10 text-white font-semibold py-3 rounded-xl transition-colors"
+                                        className="px-6 bg-secondary hover:bg-secondary/80 text-foreground font-semibold py-3 rounded-xl transition-colors"
                                     >
                                         Cancel
                                     </button>
@@ -1093,22 +1136,22 @@ export default function Dashboard() {
                             <div className="flex-1 overflow-y-auto custom-scrollbar -mr-4 pr-4">
                                 <div className="mb-6">
                                 <div className="flex items-center gap-2 mb-3">
-                                    <span className="inline-block px-2 py-1 rounded-md bg-white/5 border border-white/5 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+                                    <span className="inline-block px-2 py-1 rounded-md bg-secondary border border-border text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                                         {selectedClip.type.toUpperCase()}
                                     </span>
                                     {selectedClip.group_id && (
-                                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-bold uppercase tracking-wider text-indigo-400 whitespace-nowrap">
+                                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-bold uppercase tracking-wider text-indigo-900 dark:text-indigo-400 whitespace-nowrap">
                                             <Folder className="w-3 h-3" />
                                             {groups.find(g => g.id === selectedClip.group_id)?.title}
                                         </span>
                                     )}
                                 </div>
-                                <h2 className="text-3xl font-bold text-white mb-4">{selectedClip.title}</h2>
+                                <h2 className="text-3xl font-bold text-foreground mb-4">{selectedClip.title}</h2>
 
                                 <div className="space-y-4">
                                     <div className="flex flex-wrap gap-2">
                                         {selectedClip.tags && selectedClip.tags.map((tag: string) => (
-                                            <span key={tag} className="text-xs font-medium text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-full">
+                                            <span key={tag} className="text-xs font-semibold text-indigo-900 dark:text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-full">
                                                 #{tag}
                                             </span>
                                         ))}
@@ -1117,34 +1160,34 @@ export default function Dashboard() {
                                     {selectedClip.type === 'url' && (
                                         <div className="flex flex-col gap-3">
                                             {(selectedClip.metadata as any)?.og_image && (
-                                                <div className="rounded-xl overflow-hidden border border-white/10 relative group">
+                                                <div className="rounded-xl overflow-hidden border border-border relative group">
                                                     <img src={(selectedClip.metadata as any).og_image} className="w-full h-auto max-h-64 object-cover" alt="Preview" />
                                                     <a href={selectedClip.src_url} target="_blank" className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                                         <ExternalLink className="w-8 h-8 text-white" />
                                                     </a>
                                                 </div>
                                             )}
-                                            <a href={selectedClip.src_url} target="_blank" className="flex items-center gap-2 text-sm text-zinc-400 hover:text-indigo-400 transition-colors truncate w-fit bg-white/5 px-3 py-2 rounded-lg border border-white/5 hover:border-indigo-500/30">
+                                            <a href={selectedClip.src_url} target="_blank" className="flex items-center gap-2 text-sm text-foreground hover:text-indigo-400 transition-colors truncate w-fit bg-secondary/50 px-3 py-2 rounded-lg border border-border hover:border-indigo-500/30">
                                                 <LinkIcon className="w-4 h-4" />
                                                 <span className="truncate max-w-[300px]">{selectedClip.src_url}</span>
                                                 <ExternalLink className="w-3 h-3 opacity-50" />
                                             </a>
                                         </div>
                                     )}
-                                    {selectedClip.description && <p className="text-zinc-400 leading-relaxed whitespace-pre-wrap">{selectedClip.description}</p>}
+                                    {selectedClip.description && <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">{selectedClip.description}</p>}
                                 </div>
                             </div>
                             </div>
                             
-                            <div className="pt-6 mt-auto border-t border-white/5 flex gap-3">
+                            <div className="pt-6 mt-auto border-t border-border flex gap-3">
                                 <button 
                                     onClick={() => setIsEditing(true)}
-                                    className="flex-1 bg-white text-black font-semibold py-3 rounded-xl hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2"
+                                    className="flex-1 bg-foreground text-background font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
                                 >
                                     <Pencil className="w-4 h-4" />
                                     Edit Memory
                                 </button>
-                                <button className="p-3 bg-white/5 hover:bg-white/10 rounded-xl text-white transition-colors border border-white/10">
+                                <button className="p-3 bg-secondary hover:bg-secondary/80 rounded-xl text-foreground transition-colors border border-border">
                                     <Copy className="w-5 h-5" />
                                 </button>
                             </div>
@@ -1164,14 +1207,14 @@ export default function Dashboard() {
                 onClick={closeAddModal}
             />
             
-            <div className="relative w-full max-w-2xl bg-[#0E0C25] border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
+            <div className="relative w-full max-w-2xl bg-popover border border-border rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
                 
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-white/5">
-                    <h2 className="text-xl font-bold text-white">Add New Memory</h2>
+                <div className="flex items-center justify-between p-6 border-b border-border">
+                    <h2 className="text-xl font-bold text-foreground">Add New Memory</h2>
                     <button 
                         onClick={closeAddModal}
-                        className="p-2 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+                        className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                     >
                         <X className="w-5 h-5" />
                     </button>
@@ -1180,15 +1223,15 @@ export default function Dashboard() {
                 {/* Body */}
                 <div className="p-6 space-y-6">
                     {/* Tabs */}
-                    <div className="flex p-1 bg-white/5 rounded-xl">
+                    <div className="flex p-1 bg-secondary rounded-xl">
                         {(['link', 'image', 'note', 'pdf'] as const).map((tab) => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
                                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-lg transition-all ${
                                     activeTab === tab 
-                                    ? 'bg-indigo-600 text-white shadow-lg' 
-                                    : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                                    ? 'bg-primary text-primary-foreground shadow-lg' 
+                                    : 'text-muted-foreground hover:text-foreground hover:bg-secondary/80'
                                 }`}
                             >
                                 {tab === 'link' && <LinkIcon className="w-4 h-4" />}
@@ -1204,13 +1247,13 @@ export default function Dashboard() {
                     <div className="min-h-[150px]">
                         {activeTab === 'link' && (
                              <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                                <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">URL</label>
-                                <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-indigo-500/50 transition-all">
-                                    <LinkIcon className="w-5 h-5 text-zinc-500" />
+                                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">URL</label>
+                                <div className="flex items-center gap-3 bg-secondary/50 border border-border rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-indigo-500/50 transition-all">
+                                    <LinkIcon className="w-5 h-5 text-muted-foreground" />
                                     <input 
                                         type="url" 
                                         placeholder="https://example.com/article" 
-                                        className="bg-transparent border-none outline-none text-white placeholder-zinc-600 w-full"
+                                        className="bg-transparent border-none outline-none text-foreground placeholder-muted-foreground w-full"
                                         value={newItemForm.url}
                                         onChange={(e) => setNewItemForm({...newItemForm, url: e.target.value})}
                                         autoFocus
@@ -1236,23 +1279,23 @@ export default function Dashboard() {
                                     onDragOver={handleDrag}
                                     onDrop={handleDrop}
                                     className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer h-40 group relative overflow-hidden ${
-                                        dragActive ? 'border-indigo-500 bg-indigo-500/10' : 'border-white/10 text-zinc-500 hover:text-white hover:border-indigo-500/50 hover:bg-indigo-500/5'
+                                        dragActive ? 'border-indigo-500 bg-indigo-500/10' : 'border-border text-muted-foreground hover:text-foreground hover:border-indigo-500/50 hover:bg-indigo-500/5'
                                     }`}
                                 >
-                                    {newItemForm.file ? (
+                                     {newItemForm.file ? (
                                         <>
                                             <img src={URL.createObjectURL(newItemForm.file)} alt="Preview" className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-40 transition-opacity" />
                                             <div className="relative z-10 flex flex-col items-center">
                                                 <Check className="w-8 h-8 mb-2 text-green-400" />
-                                                <p className="text-sm font-medium text-white">{newItemForm.file.name}</p>
-                                                <p className="text-xs text-zinc-300 mt-1">Click to change</p>
+                                                <p className="text-sm font-medium text-foreground">{newItemForm.file.name}</p>
+                                                <p className="text-xs text-muted-foreground mt-1">Click to change</p>
                                             </div>
                                         </>
                                     ) : (
                                         <>
-                                            <Upload className="w-8 h-8 mb-3 text-zinc-600 group-hover:text-indigo-400 transition-colors" />
-                                            <p className="text-sm font-medium group-hover:text-indigo-300">Click to upload or drag and drop</p>
-                                            <p className="text-xs text-zinc-600 mt-1">SVG, PNG, JPG or GIF</p>
+                                            <Upload className="w-8 h-8 mb-3 text-muted-foreground group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors" />
+                                            <p className="text-sm font-medium group-hover:text-indigo-600 dark:group-hover:text-indigo-300">Click to upload or drag and drop</p>
+                                            <p className="text-xs text-muted-foreground mt-1">SVG, PNG, JPG or GIF</p>
                                         </>
                                     )}
                                 </div>
@@ -1261,10 +1304,10 @@ export default function Dashboard() {
 
                         {activeTab === 'note' && (
                              <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                                <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Note Content</label>
+                                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Note Content</label>
                                 <textarea 
                                     placeholder="Write your thoughts..." 
-                                    className="w-full h-40 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 resize-none leading-relaxed"
+                                    className="w-full h-40 bg-secondary/50 border border-border rounded-xl px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/50 resize-none leading-relaxed"
                                     value={newItemForm.content}
                                     onChange={(e) => setNewItemForm({...newItemForm, content: e.target.value})}
                                     autoFocus
@@ -1289,22 +1332,22 @@ export default function Dashboard() {
                                     onDragOver={handleDrag}
                                     onDrop={handleDrop}
                                     className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer h-40 group relative overflow-hidden ${
-                                        dragActive ? 'border-red-500 bg-red-500/10' : 'border-white/10 text-zinc-500 hover:text-white hover:border-red-500/50 hover:bg-red-500/5'
+                                        dragActive ? 'border-red-500 bg-red-500/10' : 'border-border text-muted-foreground hover:text-foreground hover:border-red-500/50 hover:bg-red-500/5'
                                     }`}
                                 >
                                     {newItemForm.file ? (
                                         <>
                                             <div className="flex flex-col items-center z-10">
                                                 <FileText className="w-8 h-8 mb-2 text-red-400" />
-                                                <p className="text-sm font-medium text-white">{newItemForm.file.name}</p>
-                                                <p className="text-xs text-zinc-300 mt-1">{(newItemForm.file.size / 1024 / 1024).toFixed(2)} MB</p>
+                                                <p className="text-sm font-medium text-foreground">{newItemForm.file.name}</p>
+                                                <p className="text-xs text-muted-foreground mt-1">{(newItemForm.file.size / 1024 / 1024).toFixed(2)} MB</p>
                                             </div>
                                         </>
                                     ) : (
                                         <>
-                                            <FileText className="w-8 h-8 mb-3 text-zinc-600 group-hover:text-red-400 transition-colors" />
-                                            <p className="text-sm font-medium group-hover:text-red-300">Click to upload PDF</p>
-                                            <p className="text-xs text-zinc-600 mt-1">Maximum size 10MB</p>
+                                            <FileText className="w-8 h-8 mb-3 text-muted-foreground group-hover:text-red-500 dark:group-hover:text-red-400 transition-colors" />
+                                            <p className="text-sm font-medium group-hover:text-red-600 dark:group-hover:text-red-300">Click to upload PDF</p>
+                                            <p className="text-xs text-muted-foreground mt-1">Maximum size 10MB</p>
                                         </>
                                     )}
                                 </div>
@@ -1328,45 +1371,45 @@ export default function Dashboard() {
                     {/* Common Fields */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                             <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Title</label>
+                             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Title</label>
                              <input 
                                  type="text" 
                                  placeholder="Give it a name" 
-                                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                 className="w-full bg-secondary/50 border border-border rounded-xl px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                                  value={newItemForm.title}
                                  onChange={(e) => setNewItemForm({...newItemForm, title: e.target.value})}
                              />
                         </div>
                         <div className="space-y-2">
-                             <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Description (Optional)</label>
+                             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Description (Optional)</label>
                              <input 
                                  type="text" 
                                  placeholder="Add a brief description" 
-                                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                 className="w-full bg-secondary/50 border border-border rounded-xl px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                                  value={newItemForm.description}
                                  onChange={(e) => setNewItemForm({...newItemForm, description: e.target.value})}
                              />
                         </div>
                         <div className="col-span-2 space-y-2">
-                             <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Tags</label>
+                             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tags</label>
                              <input 
                                  type="text" 
                                  placeholder="design, ideas, ..." 
-                                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                 className="w-full bg-secondary/50 border border-border rounded-xl px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                                  value={newItemForm.tags}
                                  onChange={(e) => setNewItemForm({...newItemForm, tags: e.target.value})}
                              />
                         </div>
                         <div className="col-span-2 space-y-2">
-                             <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Group (Optional)</label>
+                             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Group (Optional)</label>
                              <select 
-                                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 appearance-none"
+                                 className="w-full bg-secondary/50 border border-border rounded-xl px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/50 appearance-none"
                                  value={newItemForm.groupId}
                                  onChange={(e) => setNewItemForm({...newItemForm, groupId: e.target.value})}
                              >
-                                 <option value="" className="bg-[#0E0C25]">No Group</option>
+                                 <option value="" className="bg-popover">No Group</option>
                                  {groups.map(g => (
-                                     <option key={g.id} value={g.id} className="bg-[#0E0C25]">{g.title}</option>
+                                     <option key={g.id} value={g.id} className="bg-popover">{g.title}</option>
                                  ))}
                              </select>
                         </div>
@@ -1374,10 +1417,10 @@ export default function Dashboard() {
                 </div>
 
                 {/* Footer */}
-                <div className="p-6 border-t border-white/5 flex justify-end gap-3 bg-black/20">
+                <div className="p-6 border-t border-border flex justify-end gap-3 bg-secondary/20">
                     <button 
                         onClick={closeAddModal}
-                        className="px-6 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"
+                        className="px-6 py-3 rounded-xl text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors"
                     >
                         Cancel
                     </button>
@@ -1483,19 +1526,18 @@ export default function Dashboard() {
       )}
 
       
-      {/* Create Group Modal */}
-      {isGroupModalOpen && (
+        {isGroupModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
              <div 
                  className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity animate-in fade-in duration-200" 
                  onClick={() => setIsGroupModalOpen(false)}
              />
-             <div className="relative w-full max-w-md bg-[#0E0C25] border border-white/10 rounded-3xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-200">
-                 <h2 className="text-xl font-bold text-white mb-4">Create New Group</h2>
+             <div className="relative w-full max-w-md bg-popover border border-border rounded-3xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-200">
+                 <h2 className="text-xl font-bold text-foreground mb-4">Create New Group</h2>
                  <input 
                     type="text" 
                     placeholder="Group Name" 
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 mb-6"
+                    className="w-full bg-secondary/50 border border-border rounded-xl px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/50 mb-6"
                     value={newGroupTitle}
                     onChange={(e) => setNewGroupTitle(e.target.value)}
                     autoFocus
@@ -1503,7 +1545,7 @@ export default function Dashboard() {
                  <div className="flex justify-end gap-3">
                      <button 
                          onClick={() => setIsGroupModalOpen(false)}
-                         className="px-6 py-2 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"
+                         className="px-6 py-2 rounded-xl text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors"
                      >
                          Cancel
                      </button>
@@ -1526,14 +1568,14 @@ export default function Dashboard() {
                  className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity animate-in fade-in duration-200" 
                  onClick={() => setIsAddToGroupModalOpen(false)}
              />
-             <div className="relative w-full max-w-2xl bg-[#0E0C25] border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200 h-[70vh]">
-                 <div className="flex items-center justify-between p-6 border-b border-white/5">
-                    <h2 className="text-xl font-bold text-white">
+             <div className="relative w-full max-w-2xl bg-popover border border-border rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200 h-[70vh]">
+                 <div className="flex items-center justify-between p-6 border-b border-border">
+                    <h2 className="text-xl font-bold text-foreground">
                         Add to <span className="text-indigo-400">{groups.find(g => g.id === activeGroupFilter)?.title}</span>
                     </h2>
                     <button 
                         onClick={() => setIsAddToGroupModalOpen(false)}
-                        className="p-2 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+                        className="p-2 rounded-full hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
                     >
                         <X className="w-5 h-5" />
                     </button>
@@ -1546,13 +1588,13 @@ export default function Dashboard() {
                             setNewItemForm(prev => ({...prev, groupId: activeGroupFilter}))
                             setIsAddModalOpen(true)
                         }}
-                        className="w-full mb-6 p-4 rounded-xl border-2 border-dashed border-white/10 hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all flex items-center justify-center gap-2 group"
+                        className="w-full mb-6 p-4 rounded-xl border-2 border-dashed border-border hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all flex items-center justify-center gap-2 group"
                      >
-                        <Plus className="w-5 h-5 text-zinc-400 group-hover:text-indigo-400" />
-                        <span className="font-medium text-zinc-400 group-hover:text-white">Create a new memory in this group</span>
+                        <Plus className="w-5 h-5 text-muted-foreground group-hover:text-indigo-400" />
+                        <span className="font-medium text-muted-foreground group-hover:text-foreground">Create a new memory in this group</span>
                      </button>
 
-                     <p className="text-sm text-zinc-500 mb-4 font-medium sticky top-0 bg-[#0E0C25] py-2 z-10">Or select an existing memory:</p>
+                     <p className="text-sm text-muted-foreground mb-4 font-medium sticky top-0 bg-popover py-2 z-10">Or select an existing memory:</p>
                      
                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         {clips.filter(c => c.group_id !== activeGroupFilter).map(clip => (
@@ -1575,15 +1617,15 @@ export default function Dashboard() {
                                     setClips(clips.map(c => c.id === clip.id ? {...c, group_id: activeGroupFilter} : c) as any)
                                     setIsAddToGroupModalOpen(false)
                                 }}
-                                className="aspect-square bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/10 transition-all cursor-pointer relative group"
+                                className="aspect-square bg-secondary border border-border rounded-xl overflow-hidden hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/10 transition-all cursor-pointer relative group"
                             >
                                 {clip.type === 'image' && <img src={clip.src_url} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />}
-                                {clip.type === 'text' && <div className="p-4 text-xs text-white/70 line-clamp-6">{clip.content}</div>}
+                                {clip.type === 'text' && <div className="p-4 text-xs text-muted-foreground line-clamp-6">{clip.content}</div>}
                                 {clip.type === 'url' && (
                                     (clip.metadata as any)?.og_image ? (
                                         <img src={(clip.metadata as any).og_image} className="w-full h-full object-cover" />
                                     ) : (
-                                        <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-zinc-600 font-bold text-xl">URL</div>
+                                        <div className="w-full h-full flex items-center justify-center bg-secondary text-muted-foreground font-bold text-xl">URL</div>
                                     )
                                 )}
                                 {clip.type === 'pdf' && <div className="w-full h-full flex items-center justify-center bg-red-500/10 text-red-500/50"><FileText className="w-8 h-8" /></div>}
@@ -1610,14 +1652,14 @@ export default function Dashboard() {
                    className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity animate-in fade-in duration-200" 
                    onClick={() => setDeleteConfirmation(null)}
                />
-               <div className="relative w-full max-w-sm bg-[#0E0C25] border border-white/10 rounded-3xl shadow-2xl p-8 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-200">
-                    <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${deleteConfirmation === 'bulk-remove-group' ? 'bg-orange-500/10' : 'bg-red-500/10'}`}>
-                        {deleteConfirmation === 'bulk-remove-group' ? <FolderMinus className="w-8 h-8 text-orange-500" /> : <Trash className="w-8 h-8 text-red-500" />}
+               <div className="relative w-full max-w-sm bg-popover border border-border rounded-3xl shadow-2xl p-8 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-200">
+                    <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${deleteConfirmation === 'bulk-remove-group' ? 'bg-orange-500/10' : 'bg-destructive/10'}`}>
+                        {deleteConfirmation === 'bulk-remove-group' ? <FolderMinus className="w-8 h-8 text-orange-500" /> : <Trash className="w-8 h-8 text-destructive" />}
                     </div>
-                    <h3 className="text-xl font-bold text-white mb-2">
+                    <h3 className="text-xl font-bold text-foreground mb-2">
                         {deleteConfirmation === 'bulk-remove-group' ? 'Remove from Group?' : 'Are you sure?'}
                     </h3>
-                    <p className="text-zinc-400 text-sm mb-6 leading-relaxed">
+                    <p className="text-muted-foreground text-sm mb-6 leading-relaxed">
                         {deleteConfirmation === 'current' 
                             ? "This will permanently delete this memory. This action cannot be undone."
                             : deleteConfirmation === 'bulk-remove-group'
@@ -1630,7 +1672,7 @@ export default function Dashboard() {
                     <div className="flex gap-3 w-full">
                         <button 
                             onClick={() => setDeleteConfirmation(null)}
-                            className="flex-1 px-4 py-3 rounded-xl text-sm font-semibold bg-white/5 hover:bg-white/10 text-white transition-colors"
+                            className="flex-1 px-4 py-3 rounded-xl text-sm font-semibold bg-secondary hover:bg-secondary/80 text-foreground transition-colors"
                         >
                             Cancel
                         </button>
@@ -1639,7 +1681,7 @@ export default function Dashboard() {
                             className={`flex-1 px-4 py-3 rounded-xl text-sm font-semibold text-white shadow-lg transition-all ${
                                 deleteConfirmation === 'bulk-remove-group' 
                                 ? 'bg-orange-500 hover:bg-orange-600 shadow-orange-500/20' 
-                                : 'bg-red-500 hover:bg-red-600 shadow-red-500/20'
+                                : 'bg-destructive hover:bg-destructive/90 shadow-red-500/20'
                             }`}
                         >
                             {deleteConfirmation === 'bulk-remove-group' ? 'Yes, Remove' : 'Yes, Delete'}
