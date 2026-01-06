@@ -73,13 +73,22 @@ serve(async (req) => {
         // Assign immediately so we persist it even if fetch fails
         record.extractedImageUrl = imageUrl
 
-        const response = await fetch(urlToFetch)
+        const response = await fetch(urlToFetch, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+        })
         const html = await response.text()
         
         // 2. Fallback to Open Graph / Twitter Image if not found yet (or extract anyway)
         if (!imageUrl) {
-            const ogImageMatch = html.match(/<meta property="og:image" content="([^"]+)"/i)
-            const twitterImageMatch = html.match(/<meta name="twitter:image" content="([^"]+)"/i)
+            // More robust regex to handle different attribute orders and quote types
+            // Matches: <meta ... property="og:image" ... content="LINK" ... > OR <meta ... content="LINK" ... property="og:image" ... >
+            const ogImageMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) || 
+                                 html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i)
+            
+            const twitterImageMatch = html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i) ||
+                                      html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image["']/i)
             
             if (ogImageMatch && ogImageMatch[1]) imageUrl = ogImageMatch[1]
             else if (twitterImageMatch && twitterImageMatch[1]) imageUrl = twitterImageMatch[1]
