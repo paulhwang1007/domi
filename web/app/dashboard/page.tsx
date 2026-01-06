@@ -39,6 +39,11 @@ export default function Dashboard() {
   const settingsRef = useRef<HTMLDivElement>(null)
   const { setTheme, theme } = useTheme()
   
+  // Supabase & Router
+  const supabase = createClient()
+  const router = useRouter()
+  const profileRef = useRef<HTMLDivElement>(null)
+  
   // Validation State
   const [formErrors, setFormErrors] = useState<string[]>([])
 
@@ -60,6 +65,7 @@ export default function Dashboard() {
   // Image Error State
   const [failedImages, setFailedImages] = useState<Set<number>>(new Set())
   const [modalImageError, setModalImageError] = useState(false)
+  const [isMainUrlHovered, setIsMainUrlHovered] = useState(false)
   
   // Add Existing to Group State
   const [isAddToGroupModalOpen, setIsAddToGroupModalOpen] = useState(false)
@@ -124,9 +130,6 @@ export default function Dashboard() {
         setTimeout(() => chatScrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
     }
   }
-  const supabase = createClient()
-  const router = useRouter()
-  const profileRef = useRef<HTMLDivElement>(null)
   
   // File Upload State and Refs
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -448,7 +451,7 @@ export default function Dashboard() {
 
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen text-foreground">
       {/* Header */}
       <header className="flex items-center justify-between mb-4 sticky top-0 z-50 bg-background/80 backdrop-blur-md py-6 px-6 md:px-8 border-b border-border">
         <div className="flex items-center gap-4">
@@ -909,7 +912,7 @@ export default function Dashboard() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="relative w-full max-w-6xl h-[92vh] md:h-[85vh] bg-background border border-border rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row isolate"
+                className="relative w-full max-w-6xl h-[92vh] md:h-[85vh] bg-background rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row isolate"
             >
                 <div className="absolute top-4 right-4 z-20 flex gap-2">
                     <button 
@@ -920,7 +923,7 @@ export default function Dashboard() {
                     </button>
                 </div>
 
-                <div className="w-full md:w-3/5 bg-black/40 flex items-center justify-center p-8 border-b md:border-b-0 md:border-r border-white/5 relative overflow-hidden">
+                <div className="w-full md:w-3/5 bg-white/30 dark:bg-zinc-900/50 flex items-center justify-center p-8 border-b md:border-b-0 md:border-r border-border relative overflow-hidden">
                      {selectedClip.type === 'image' && (
                         modalImageError ? (
                             <motion.div layout className="flex flex-col items-center justify-center text-muted-foreground">
@@ -955,7 +958,19 @@ export default function Dashboard() {
                                     <span className="text-4xl font-bold text-muted-foreground">URL</span>
                                 </div>
                              )}
-                             <a href={selectedClip.src_url} target="_blank" rel="noopener noreferrer" className="text-indigo-900 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 underline underline-offset-4 text-lg font-semibold break-all max-w-md line-clamp-2 text-center">
+                             <a 
+                               href={selectedClip.src_url} 
+                               target="_blank" 
+                               rel="noopener noreferrer" 
+                               className="underline underline-offset-4 text-lg font-semibold break-all max-w-md line-clamp-2 text-center transition-colors"
+                               onMouseEnter={() => setIsMainUrlHovered(true)}
+                               onMouseLeave={() => setIsMainUrlHovered(false)}
+                               style={{ 
+                                   color: theme === 'dark' 
+                                     ? (isMainUrlHovered ? '#a5b4fc' : '#818cf8') 
+                                     : (isMainUrlHovered ? '#8b5cf6' : '#6d28d9') 
+                               }}
+                             >
                                  {selectedClip.src_url}
                              </a>
                          </div>
@@ -1177,7 +1192,15 @@ export default function Dashboard() {
                                 <div className="space-y-4">
                                     <div className="flex flex-wrap gap-2">
                                         {selectedClip.tags && selectedClip.tags.map((tag: string) => (
-                                            <span key={tag} className="text-xs font-semibold text-indigo-900 dark:text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-full">
+                                            <span 
+                                                key={tag} 
+                                                className="text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors"
+                                                style={{ 
+                                                    backgroundColor: theme === 'dark' ? 'rgba(99, 102, 241, 0.1)' : '#ede9fe', 
+                                                    color: theme === 'dark' ? '#a5b4fc' : '#6d28d9', 
+                                                    borderColor: theme === 'dark' ? 'rgba(99, 102, 241, 0.2)' : '#ddd6fe' 
+                                                }}
+                                            >
                                                 #{tag}
                                             </span>
                                         ))}
@@ -1193,7 +1216,12 @@ export default function Dashboard() {
                                                     </a>
                                                 </div>
                                             )}
-                                            <a href={selectedClip.src_url} target="_blank" className="flex items-center gap-2 text-sm text-foreground hover:text-indigo-400 transition-colors truncate w-fit bg-secondary/50 px-3 py-2 rounded-lg border border-border hover:border-indigo-500/30">
+                                            <a 
+                                              href={selectedClip.src_url} 
+                                              target="_blank" 
+                                              className="flex items-center gap-2 text-sm transition-colors truncate w-fit bg-secondary/50 px-3 py-2 rounded-lg border border-border hover:border-[#ddd6fe] dark:hover:border-indigo-500/30"
+                                              style={{ color: theme === 'dark' ? '#818cf8' : '#6d28d9' }}
+                                            >
                                                 <LinkIcon className="w-4 h-4" />
                                                 <span className="truncate max-w-[300px]">{selectedClip.src_url}</span>
                                                 <ExternalLink className="w-3 h-3 opacity-50" />
