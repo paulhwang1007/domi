@@ -524,7 +524,7 @@ export default function Dashboard() {
                         <div className="p-1">
                             <button 
                                 onClick={handleSignOut}
-                                className="w-full text-left px-3 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-lg transition-colors flex items-center gap-2"
+                                className="w-full text-left px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 rounded-lg transition-colors flex items-center gap-2"
                             >
                                 <LogOut className="w-4 h-4" />
                                 Log out
@@ -595,17 +595,9 @@ export default function Dashboard() {
                         </button>
                     )}
                     <button 
-                        onClick={() => {
-                            if (selectedItems.size > 0) {
-                                // Trigger delete confirmation or direct delete
-                                // For now, let's use the existing delete confirmation modal logic or add a new one?
-                                // Let's just create a new 'bulk' delete state or reuse.
-                                // Reusing setDeleteConfirmation('bulk') might work if we handle it.
-                                setDeleteConfirmation('bulk')
-                            }
-                        }}
+                        onClick={() => setDeleteConfirmation('bulk')}
                         disabled={selectedItems.size === 0}
-                        className="px-4 py-1.5 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-colors text-sm font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-4 py-1.5 rounded-lg bg-red-600 !text-white hover:bg-red-700 shadow-lg shadow-red-500/20 transition-all text-sm font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <Trash className="w-4 h-4" />
                         Delete {selectedItems.size > 0 ? `(${selectedItems.size})` : ''}
@@ -683,7 +675,7 @@ export default function Dashboard() {
                                     ) : (
                                         <button 
                                             onClick={(e) => { e.stopPropagation(); setDeleteConfirmation(group.id) }}
-                                            className="p-2 opacity-0 group-hover:opacity-100 rounded-full bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-all border border-destructive/20"
+                                            className="p-2 opacity-0 group-hover:opacity-100 rounded-full bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all border border-red-500/20"
                                             title="Delete Group"
                                         >
                                             <Trash className="w-3 h-3" />
@@ -1125,7 +1117,7 @@ export default function Dashboard() {
                                     
                                     <button 
                                         onClick={() => setDeleteConfirmation('current')}
-                                        className="px-4 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-semibold py-3 rounded-xl transition-colors border border-red-500/20"
+                                        className="px-4 bg-red-500/10 hover:bg-red-500/20 text-red-500 font-semibold py-3 rounded-xl transition-colors border border-red-500/20"
                                         title="Delete Memory"
                                     >
                                         <Trash className="w-5 h-5" />
@@ -1656,8 +1648,8 @@ export default function Dashboard() {
                    onClick={() => setDeleteConfirmation(null)}
                />
                <div className="relative w-full max-w-sm bg-popover border border-border rounded-3xl shadow-2xl p-8 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-200">
-                    <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${deleteConfirmation === 'bulk-remove-group' ? 'bg-orange-500/10' : 'bg-destructive/10'}`}>
-                        {deleteConfirmation === 'bulk-remove-group' ? <FolderMinus className="w-8 h-8 text-orange-500" /> : <Trash className="w-8 h-8 text-destructive" />}
+                    <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${deleteConfirmation === 'bulk-remove-group' ? 'bg-orange-500/10' : 'bg-red-500/10'}`}>
+                        {deleteConfirmation === 'bulk-remove-group' ? <FolderMinus className="w-8 h-8 text-orange-500" /> : <Trash className="w-8 h-8 text-red-500" />}
                     </div>
                     <h3 className="text-xl font-bold text-foreground mb-2">
                         {deleteConfirmation === 'bulk-remove-group' ? 'Remove from Group?' : 'Are you sure?'}
@@ -1684,7 +1676,7 @@ export default function Dashboard() {
                             className={`flex-1 px-4 py-3 rounded-xl text-sm font-semibold text-white shadow-lg transition-all ${
                                 deleteConfirmation === 'bulk-remove-group' 
                                 ? 'bg-orange-500 hover:bg-orange-600 shadow-orange-500/20' 
-                                : 'bg-destructive hover:bg-destructive/90 shadow-red-500/20'
+                                : 'bg-red-600 hover:bg-red-700 shadow-red-500/20'
                             }`}
                         >
                             {deleteConfirmation === 'bulk-remove-group' ? 'Yes, Remove' : 'Yes, Delete'}
