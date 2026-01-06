@@ -437,9 +437,9 @@ export default function Dashboard() {
 
 
   return (
-    <div className="min-h-screen p-6 md:p-8">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <header className="flex items-center justify-between mb-8 sticky top-0 z-50 bg-background/80 backdrop-blur-md py-4 -mx-6 px-6 border-b border-border">
+      <header className="flex items-center justify-between mb-8 sticky top-0 z-50 bg-background/80 backdrop-blur-md py-5 px-6 md:px-8 border-b border-border">
         <div className="flex items-center gap-4">
           <Link href="/" className="flex items-center gap-1.5">
             <img src="/domi_icon.png" alt="Domi Logo" className="w-7 h-7" />
@@ -535,6 +535,8 @@ export default function Dashboard() {
             </div>
         </div>
       </header>
+
+      <main className="p-6 md:p-8 pt-0">
 
       {/* View Switcher / Navigation */}
       <div className="flex items-center gap-6 mb-8 border-b border-border pb-1">
@@ -1692,6 +1694,7 @@ export default function Dashboard() {
            </div>
        )}
 
+      </main>
     </div>
   )
 }
