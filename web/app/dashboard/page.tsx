@@ -441,8 +441,9 @@ export default function Dashboard() {
       {/* Header */}
       <header className="flex items-center justify-between mb-8 sticky top-0 z-50 bg-background/80 backdrop-blur-md py-4 -mx-6 px-6 border-b border-border">
         <div className="flex items-center gap-4">
-          <Link href="/">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">Domi</h1>
+          <Link href="/" className="flex items-center gap-1.5">
+            <img src="/domi_icon.png" alt="Domi Logo" className="w-7 h-7" />
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-violet-700 to-purple-700 dark:from-violet-500 dark:to-purple-500 bg-clip-text text-transparent">Domi</h1>
           </Link>
           
           <div className="hidden md:flex items-center gap-2 bg-secondary/50 border border-border rounded-full px-3 py-1.5 hover:bg-secondary/80 transition-colors cursor-text w-64 focus-within:ring-2 focus-within:ring-indigo-500/50 focus-within:border-transparent">
