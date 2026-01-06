@@ -439,7 +439,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <header className="flex items-center justify-between mb-8 sticky top-0 z-50 bg-background/80 backdrop-blur-md py-5 px-6 md:px-8 border-b border-border">
+      <header className="flex items-center justify-between mb-4 sticky top-0 z-50 bg-background/80 backdrop-blur-md py-6 px-6 md:px-8 border-b border-border">
         <div className="flex items-center gap-4">
           <Link href="/" className="flex items-center gap-1.5">
             <img src="/domi_icon.png" alt="Domi Logo" className="w-7 h-7" />
