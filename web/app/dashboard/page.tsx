@@ -8,7 +8,7 @@ import Link from 'next/link'
 import { 
     LayoutGrid, List, Plus, Search, LogOut, Settings, 
     MoreVertical, Trash, ExternalLink, X, Image as ImageIcon,
-    FileText, Link as LinkIcon, StickyNote, FolderPlus,
+    FileText, Link as LinkIcon, StickyNote, FolderPlus, FolderMinus,
     ChevronDown, Filter, Check, CheckSquare, Ghost, Loader2, User, Copy, Pencil, Upload, Folder, ChevronRight, ImageOff,
     Sparkles, Send, MessageSquare
 } from 'lucide-react'
@@ -322,6 +322,26 @@ export default function Dashboard() {
           return
       }
 
+      if (deleteConfirmation === 'bulk-remove-group') {
+           const ids = Array.from(selectedItems)
+           // Remove from group (set group_id to null)
+           const { error } = await supabase.from('clips').update({ group_id: null }).in('id', ids)
+
+           if (error) {
+               alert('Failed to remove items: ' + error.message)
+           } else {
+               setClips(clips.map(c => selectedItems.has(c.id) ? { ...c, group_id: null } : c)) // Assuming we filtered out in view, but updating state correct
+               // Update group count
+               if (activeGroupFilter) {
+                   setGroups(groups.map(g => g.id === activeGroupFilter ? { ...g, count: g.count - ids.length } : g))
+               }
+           }
+           setSelectedItems(new Set())
+           setIsSelectionMode(false)
+           setDeleteConfirmation(null)
+           return
+      }
+
       if (deleteConfirmation === 'current' && selectedClip) {
           // Delete Memory
           const { error } = await supabase.from('clips').delete().eq('id', selectedClip.id)
@@ -505,6 +525,21 @@ export default function Dashboard() {
         <div className="ml-auto flex items-center gap-3 pb-2">
             {isSelectionMode ? (
                 <>
+                    {activeGroupFilter && (
+                        <button 
+                            onClick={() => {
+                                if (selectedItems.size > 0) {
+                                    setDeleteConfirmation('bulk-remove-group')
+                                }
+                            }}
+                            disabled={selectedItems.size === 0}
+                            className="px-4 py-1.5 rounded-lg bg-orange-500/10 text-orange-400 hover:bg-orange-500 hover:text-white transition-colors text-sm font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Remove from Group"
+                        >
+                            <FolderMinus className="w-4 h-4" />
+                            Remove
+                        </button>
+                    )}
                     <button 
                         onClick={() => {
                             if (selectedItems.size > 0) {
@@ -621,122 +656,126 @@ export default function Dashboard() {
 
       ) : (
       /* Masonry Feed */
-      <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
-        {loading ? (
-             Array.from({ length: 8 }).map((_, i) => (
+      loading ? (
+        /* Loading Skeletons */
+        <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
+             {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="break-inside-avoid mb-6 bg-white/5 border border-white/5 rounded-2xl h-64 animate-pulse relative overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-full animate-[shimmer_1.5s_infinite]" />
                 </div>
-             ))
-        ) : clips.length === 0 ? (
-            <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="col-span-full h-[60vh] flex flex-col items-center justify-center text-center p-8 border-2 border-dashed border-white/5 rounded-3xl bg-white/5"
-            >
-                <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-indigo-500/20 to-purple-500/20 flex items-center justify-center mb-6">
-                    <Sparkles className="w-12 h-12 text-indigo-400 animate-pulse" />
-                </div>
-                <h2 className="text-2xl font-bold text-white mb-2">Welcome to your External Brain</h2>
-                <p className="text-zinc-400 max-w-md mb-8">
-                    Domi helps you capture, organize, and chat with your digital life. 
-                    Start by adding your first memory.
-                </p>
-                <button 
-                    onClick={() => setIsAddModalOpen(true)}
-                    className="px-8 py-3 bg-white text-black font-bold rounded-full hover:scale-105 transition-transform shadow-[0_0_20px_rgba(255,255,255,0.3)] flex items-center gap-2"
+             ))}
+        </div>
+      ) : clips.length === 0 ? (
+          /* Empty State */
+          <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="w-full h-[60vh] flex flex-col items-center justify-center text-center p-8 border-2 border-dashed border-white/5 rounded-3xl bg-white/5"
+          >
+              <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-indigo-500/20 to-purple-500/20 flex items-center justify-center mb-6">
+                  <Sparkles className="w-12 h-12 text-indigo-400 animate-pulse" />
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">Welcome to your External Brain</h2>
+              <p className="text-zinc-400 max-w-md mb-8">
+                  Domi helps you capture, organize, and chat with your digital life. 
+                  Start by adding your first memory.
+              </p>
+              <button 
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="px-8 py-3 bg-white text-black font-bold rounded-full hover:scale-105 transition-transform shadow-[0_0_20px_rgba(255,255,255,0.3)] flex items-center gap-2"
+              >
+                  <Plus className="w-5 h-5" />
+                  Create Memory
+              </button>
+          </motion.div>
+      ) : filteredClips.length === 0 ? (
+          /* No Search Results */
+          <div className="w-full h-64 flex flex-col items-center justify-center text-zinc-500 animate-in fade-in duration-300">
+              <Search className="w-12 h-12 mb-4 opacity-50" />
+              <p className="text-lg font-medium text-white/50">No memories found for "{debouncedSearchQuery}"</p>
+              <p className="text-sm">Try a different keyword or tag</p>
+          </div>
+      ) : (
+          /* Masonry Feed */
+          <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
+            {filteredClips.map((clip, index) => (
+                <motion.div 
+                    layout
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: index * 0.05, ease: "easeOut" }}
+                    key={clip.id} 
+                    className="break-inside-avoid mb-6 group relative" 
+                    onClick={() => { 
+                        if (isSelectionMode) {
+                            toggleSelection(clip.id)
+                        } else {
+                            setSelectedClip(clip); setModalImageError(false); setIsEditing(false); setDeleteConfirmation(null); setEditForm({ title: clip.title || '', description: clip.description || '', tags: clip.tags ? clip.tags.join(', ') : '', groupId: clip.group_id || '' }) 
+                        }
+                    }}
                 >
-                    <Plus className="w-5 h-5" />
-                    Create Memory
-                </button>
-            </motion.div>
-        ) : filteredClips.length === 0 ? (
-            <div className="col-span-full h-64 flex flex-col items-center justify-center text-zinc-500 animate-in fade-in duration-300">
-                <Search className="w-12 h-12 mb-4 opacity-50" />
-                <p className="text-lg font-medium text-white/50">No memories found for "{debouncedSearchQuery}"</p>
-                <p className="text-sm">Try a different keyword or tag</p>
-            </div>
-        ) : (
-            filteredClips.map((clip, index) => (
-            <motion.div 
-                layout
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: index * 0.05, ease: "easeOut" }}
-                key={clip.id} 
-                className="break-inside-avoid mb-6 group relative" 
-                onClick={() => { 
-                    if (isSelectionMode) {
-                        toggleSelection(clip.id)
-                    } else {
-                        setSelectedClip(clip); setModalImageError(false); setIsEditing(false); setDeleteConfirmation(null); setEditForm({ title: clip.title || '', description: clip.description || '', tags: clip.tags ? clip.tags.join(', ') : '', groupId: clip.group_id || '' }) 
-                    }
-                }}
-            >
-                {isSelectionMode && (
-                    <div className="absolute top-3 right-3 z-10">
-                         <div className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all bg-black/50 backdrop-blur-sm ${selectedItems.has(clip.id) ? 'bg-indigo-500 border-indigo-500' : 'border-white/50 hover:border-white'}`}>
-                            {selectedItems.has(clip.id) && <Check className="w-3.5 h-3.5 text-white" />}
+                    {isSelectionMode && (
+                        <div className="absolute top-3 right-3 z-10">
+                             <div className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all bg-black/50 backdrop-blur-sm ${selectedItems.has(clip.id) ? 'bg-indigo-500 border-indigo-500' : 'border-white/50 hover:border-white'}`}>
+                                {selectedItems.has(clip.id) && <Check className="w-3.5 h-3.5 text-white" />}
+                            </div>
+                        </div>
+                    )}
+                    <div className={`bg-white/5 backdrop-blur-sm border rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 cursor-pointer ${selectedItems.has(clip.id) ? 'border-indigo-500 ring-1 ring-indigo-500 bg-indigo-500/5' : 'border-white/10'}`}>
+                    
+                    {clip.type === 'image' && (
+                        <div className="relative">
+                            {failedImages.has(clip.id) ? (
+                                <div className="w-full aspect-video bg-white/5 flex flex-col items-center justify-center text-zinc-600">
+                                    <ImageOff className="w-8 h-8 mb-2 opacity-50" />
+                                    <span className="text-xs font-medium">Image not found</span>
+                                </div>
+                            ) : (
+                                <img 
+                                    src={clip.src_url} 
+                                    alt={clip.title || 'Clip'} 
+                                    className="w-full h-auto object-cover" 
+                                    onError={() => setFailedImages(prev => new Set(prev).add(clip.id))}
+                                />
+                            )}
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                        </div>
+                    )}
+                    
+                    {clip.type === 'text' && (
+                        <div className="p-6 bg-gradient-to-br from-indigo-500/10 to-transparent">
+                            <p className="font-serif text-lg text-white/90 leading-relaxed">"{clip.content}"</p>
+                        </div>
+                    )}
+
+                    {clip.type === 'url' && (
+                        <div className="h-32 bg-zinc-900 flex items-center justify-center text-zinc-600">
+                            <span className="text-4xl font-bold opacity-20">URL</span>
+                        </div>
+                    )}
+
+                    {clip.type === 'pdf' && (
+                        <div className="h-32 bg-red-500/10 flex items-center justify-center text-red-500/50">
+                            <FileText className="w-12 h-12" />
+                        </div>
+                    )}
+
+                    <div className="p-4">
+                        <h3 className="font-medium text-white mb-2 group-hover:text-indigo-400 transition-colors">{clip.title}</h3>
+                        {clip.description && <p className="text-xs text-zinc-500 mb-3">{clip.description}</p>}
+                        
+                        <div className="flex flex-wrap gap-2">
+                            {clip.tags && clip.tags.map((tag: string) => (
+                                <span key={tag} className="text-[10px] uppercase tracking-wider font-semibold text-zinc-500 bg-white/5 px-2 py-1 rounded-md">{tag}</span>
+                            ))}
                         </div>
                     </div>
-                )}
-                <div className={`bg-white/5 backdrop-blur-sm border rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 cursor-pointer ${selectedItems.has(clip.id) ? 'border-indigo-500 ring-1 ring-indigo-500 bg-indigo-500/5' : 'border-white/10'}`}>
-                
-                {clip.type === 'image' && (
-                    <div className="relative">
-                        {failedImages.has(clip.id) ? (
-                            <div className="w-full aspect-video bg-white/5 flex flex-col items-center justify-center text-zinc-600">
-                                <ImageOff className="w-8 h-8 mb-2 opacity-50" />
-                                <span className="text-xs font-medium">Image not found</span>
-                            </div>
-                        ) : (
-                            <img 
-                                src={clip.src_url} 
-                                alt={clip.title || 'Clip'} 
-                                className="w-full h-auto object-cover" 
-                                onError={() => setFailedImages(prev => new Set(prev).add(clip.id))}
-                            />
-                        )}
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                     </div>
-                )}
-                
-                {clip.type === 'text' && (
-                    <div className="p-6 bg-gradient-to-br from-indigo-500/10 to-transparent">
-                        <p className="font-serif text-lg text-white/90 leading-relaxed">"{clip.content}"</p>
-                    </div>
-                )}
 
-                {clip.type === 'url' && (
-                    <div className="h-32 bg-zinc-900 flex items-center justify-center text-zinc-600">
-                        <span className="text-4xl font-bold opacity-20">URL</span>
-                    </div>
-                )}
-
-                {clip.type === 'pdf' && (
-                    <div className="h-32 bg-red-500/10 flex items-center justify-center text-red-500/50">
-                        <FileText className="w-12 h-12" />
-                    </div>
-                )}
-
-                <div className="p-4">
-                    <h3 className="font-medium text-white mb-2 group-hover:text-indigo-400 transition-colors">{clip.title}</h3>
-                    {clip.description && <p className="text-xs text-zinc-500 mb-3">{clip.description}</p>}
-                    
-                    <div className="flex flex-wrap gap-2">
-                        {clip.tags && clip.tags.map((tag: string) => (
-                            <span key={tag} className="text-[10px] uppercase tracking-wider font-semibold text-zinc-500 bg-white/5 px-2 py-1 rounded-md">{tag}</span>
-                        ))}
-                    </div>
-                </div>
-                </div>
-
-            </motion.div>
-            ))
-        )}
-
-      </div>
-      )}
+                </motion.div>
+            ))}
+          </div>
+      )) }
 
        {/* Detail Modal */}
        <AnimatePresence>
@@ -1003,7 +1042,7 @@ export default function Dashboard() {
                     ) : (
                         /* View Mode */
                         <>
-                            <div className="mb-6 animate-in fade-in duration-200">
+                            <div className="mb-6">
                                 <div className="flex items-center gap-2 mb-3">
                                     <span className="inline-block px-2 py-1 rounded-md bg-white/5 border border-white/5 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
                                         {selectedClip.type.toUpperCase()}
@@ -1035,11 +1074,11 @@ export default function Dashboard() {
                                 </div>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto custom-scrollbar animate-in fade-in duration-200">
+                            <div className="flex-1 overflow-y-auto custom-scrollbar">
                                 {selectedClip.description && <p className="text-zinc-400 leading-relaxed whitespace-pre-wrap">{selectedClip.description}</p>}
                             </div>
                             
-                            <div className="pt-6 mt-auto border-t border-white/5 flex gap-3 animate-in fade-in duration-200">
+                            <div className="pt-6 mt-auto border-t border-white/5 flex gap-3">
                                 <button 
                                     onClick={() => setIsEditing(true)}
                                     className="flex-1 bg-white text-black font-semibold py-3 rounded-xl hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2"
@@ -1508,13 +1547,19 @@ export default function Dashboard() {
                    onClick={() => setDeleteConfirmation(null)}
                />
                <div className="relative w-full max-w-sm bg-[#0E0C25] border border-white/10 rounded-3xl shadow-2xl p-8 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-200">
-                    <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
-                        <Trash className="w-8 h-8 text-red-500" />
+                    <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${deleteConfirmation === 'bulk-remove-group' ? 'bg-orange-500/10' : 'bg-red-500/10'}`}>
+                        {deleteConfirmation === 'bulk-remove-group' ? <FolderMinus className="w-8 h-8 text-orange-500" /> : <Trash className="w-8 h-8 text-red-500" />}
                     </div>
-                    <h3 className="text-xl font-bold text-white mb-2">Are you sure?</h3>
+                    <h3 className="text-xl font-bold text-white mb-2">
+                        {deleteConfirmation === 'bulk-remove-group' ? 'Remove from Group?' : 'Are you sure?'}
+                    </h3>
                     <p className="text-zinc-400 text-sm mb-6 leading-relaxed">
                         {deleteConfirmation === 'current' 
                             ? "This will permanently delete this memory. This action cannot be undone."
+                            : deleteConfirmation === 'bulk-remove-group'
+                            ? "These memories will be removed from this group but will remain safe in your 'All Memories'."
+                            : deleteConfirmation === 'bulk'
+                            ? `This will permanently delete ${selectedItems.size} items. This action cannot be undone.`
                             : "This will delete the group. Any memories inside will be moved to 'All Memories' and kept safe."
                         }
                     </p>
@@ -1527,9 +1572,13 @@ export default function Dashboard() {
                         </button>
                         <button 
                             onClick={handleConfirmDelete}
-                            className="flex-1 px-4 py-3 rounded-xl text-sm font-semibold bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20 transition-all"
+                            className={`flex-1 px-4 py-3 rounded-xl text-sm font-semibold text-white shadow-lg transition-all ${
+                                deleteConfirmation === 'bulk-remove-group' 
+                                ? 'bg-orange-500 hover:bg-orange-600 shadow-orange-500/20' 
+                                : 'bg-red-500 hover:bg-red-600 shadow-red-500/20'
+                            }`}
                         >
-                            Yes, Delete
+                            {deleteConfirmation === 'bulk-remove-group' ? 'Yes, Remove' : 'Yes, Delete'}
                         </button>
                     </div>
                </div>
