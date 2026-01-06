@@ -64,8 +64,8 @@ export default async function LandingPage() {
           for the <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-indigo-400 to-blue-400">Web</span>
         </h1>
         
-        <p className="text-lg md:text-xl text-zinc-400 max-w-2xl mb-12 leading-relaxed">
-          Capture anything, organize effortlessly, and retrieve instantly with AI-powered context. The second brain designed for your digital life.
+        <p className="text-lg md:text-xl text-zinc-400 max-w-3xl mb-16 leading-relaxed">
+          A powerful Chrome extension and web app to capture anything instantly, organize effortlessly with AI, and store for retrieval whenever you need it.
         </p>
 
         {/* CTA Input - Inspired by Circle */}
@@ -86,6 +86,8 @@ export default async function LandingPage() {
         </div>
         
         <p className="mt-4 text-xs text-zinc-500">No credit card required</p>
+
+
 
         {/* Curved Line Graphic Section */}
 
@@ -140,7 +142,7 @@ export default async function LandingPage() {
       </section>
 
       {/* How it Works Section */}
-      <section id="how-it-works" className="py-24 relative z-10 bg-gradient-to-b from-transparent to-black/40">
+      <section id="how-it-works" className="py-24 relative z-10">
           <div className="max-w-7xl mx-auto px-6">
               <div className="text-center mb-20">
                   <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">The Domi Workflow</h2>
@@ -188,7 +190,7 @@ export default async function LandingPage() {
       </section>
 
       {/* Final CTA */}
-      <section className="py-32 px-6 text-center">
+      <section className="pt-32 pb-16 px-6 text-center">
           <div className="max-w-3xl mx-auto bg-gradient-to-b from-indigo-900/20 to-transparent p-12 rounded-3xl border border-indigo-500/20 backdrop-blur-sm">
               <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Ready to upgrade your memory?</h2>
               <p className="text-zinc-400 text-lg mb-10 max-w-xl mx-auto">
@@ -206,8 +208,8 @@ export default async function LandingPage() {
       </section>
       
       {/* Footer Simple */}
-      <footer className="border-t border-white/5 mt-20 py-12 text-center text-zinc-500 text-sm">
-        <p>&copy; {new Date().getFullYear()} Domi Inc. Curated by You.</p>
+      <footer className="border-t border-white/5 py-12 text-center text-zinc-500 text-sm">
+        <p>&copy; {new Date().getFullYear()} Domi Inc.</p>
       </footer>
     </div>
   );
