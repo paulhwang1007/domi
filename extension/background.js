@@ -332,11 +332,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         updateClip(request.clipId, request.updates);
     }
     else if (request.action === "SAVE_CURRENT_TAB") {
+        // Acknowledge receipt immediately so popup can close safely
+        sendResponse({ success: true });
+        
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             if (tabs[0]) saveClip('url', { title: tabs[0].title, srcUrl: tabs[0].url });
         });
     }
     else if (request.action === "SAVE_SCREENSHOT") {
+         // Acknowledge receipt immediately
+         sendResponse({ success: true });
+
          chrome.tabs.captureVisibleTab(null, { format: 'png' }, (dataUrl) => {
              if (chrome.runtime.lastError) {
                  console.error(chrome.runtime.lastError);
