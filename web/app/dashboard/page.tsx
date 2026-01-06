@@ -214,13 +214,24 @@ export default function Dashboard() {
 
   const fetchData = async () => {
       setLoading(true)
-      const [clipsRes, groupsRes] = await Promise.all([
-          supabase.from('clips').select('*').order('created_at', { ascending: false }),
-          supabase.from('groups').select('*').order('created_at', { ascending: false })
-      ])
+      
+      // Fetch Clips
+      const { data: clipsData, error: clipsError } = await supabase
+          .from('clips')
+          .select('*')
+          .order('created_at', { ascending: false })
 
-      const fetchedGroups = groupsRes.data || []
-      const fetchedClips = clipsRes.data || []
+      // Fetch Groups
+      const { data: groupsData, error: groupsError } = await supabase
+          .from('groups')
+          .select('*')
+          .order('created_at', { ascending: false })
+
+      if (clipsError) console.error('Error fetching clips:', clipsError)
+      if (groupsError) console.error('Error fetching groups:', groupsError)
+
+      const fetchedGroups = groupsData || []
+      const fetchedClips = clipsData || []
 
       // Calculate counts manually for now
       const groupsWithCounts = fetchedGroups.map(group => ({
@@ -463,7 +474,7 @@ export default function Dashboard() {
                 onClick={fetchData}
                 disabled={loading}
                 className={`p-2 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground transition-colors ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                title="Refresh Feed"
+                title="Refresh Data"
             >
                 <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
             </button>
@@ -643,6 +654,21 @@ export default function Dashboard() {
       </div>
 
       {currentView === 'groups' && !activeGroupFilter ? (
+          loading ? (
+            /* Groups Loading Skeletons */
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                 {Array.from({ length: 10 }).map((_, i) => (
+                    <div key={i} className="aspect-square bg-card border border-border rounded-2xl animate-pulse relative overflow-hidden flex flex-col items-center justify-center p-6 gap-4">
+                        <div className="w-16 h-16 rounded-2xl bg-secondary/80" />
+                        <div className="space-y-2 flex flex-col items-center w-full">
+                            <div className="h-4 w-24 bg-secondary/80 rounded" />
+                            <div className="h-3 w-12 bg-secondary/50 rounded" />
+                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-full animate-[shimmer_1.5s_infinite]" />
+                    </div>
+                 ))}
+            </div>
+          ) : (
           /* Groups Grid View */
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
               {filteredGroups.length === 0 && debouncedSearchQuery ? (
@@ -700,13 +726,18 @@ export default function Dashboard() {
               )}
           </div>
 
-      ) : (
+      )) : (
       /* Masonry Feed */
       loading ? (
         /* Loading Skeletons */
         <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
              {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="break-inside-avoid mb-6 bg-card border border-border rounded-2xl h-64 animate-pulse relative overflow-hidden">
+                <div key={i} className="break-inside-avoid mb-6 bg-card border border-border rounded-2xl animate-pulse relative overflow-hidden flex flex-col">
+                    <div className="w-full h-48 bg-secondary/80" />
+                    <div className="p-4 space-y-3">
+                        <div className="h-4 w-3/4 bg-secondary/80 rounded" />
+                        <div className="h-3 w-1/2 bg-secondary/50 rounded" />
+                    </div>
                     <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-full animate-[shimmer_1.5s_infinite]" />
                 </div>
              ))}
