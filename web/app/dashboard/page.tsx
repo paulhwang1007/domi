@@ -697,12 +697,34 @@ export default function Dashboard() {
               </button>
           </motion.div>
       ) : filteredClips.length === 0 ? (
-          /* No Search Results */
-          <div className="w-full h-64 flex flex-col items-center justify-center text-zinc-500 animate-in fade-in duration-300">
+          /* No Search Results or Group Empty */
+          activeGroupFilter && !debouncedSearchQuery ? (
+               <div className="col-span-full h-[50vh] flex flex-col items-center justify-center text-center p-8 border-2 border-dashed border-white/5 rounded-3xl bg-white/5 animate-in fade-in duration-300">
+                    <div className="w-20 h-20 rounded-full bg-indigo-500/10 flex items-center justify-center mb-6">
+                        <FolderPlus className="w-10 h-10 text-indigo-400" />
+                    </div>
+                    <h2 className="text-xl font-bold text-white mb-2">This group is empty</h2>
+                    <p className="text-zinc-400 mb-6 max-w-sm">
+                        Start building this collection by adding relevant memories.
+                    </p>
+                    <button 
+                        onClick={() => {
+                            setNewItemForm(prev => ({...prev, groupId: activeGroupFilter}))
+                            setIsAddToGroupModalOpen(true)
+                        }}
+                        className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl shadow-lg shadow-indigo-500/20 transition-all flex items-center gap-2"
+                    >
+                        <Plus className="w-4 h-4" />
+                        Add to Group
+                    </button>
+               </div>
+          ) : (
+          <div className="col-span-full h-64 flex flex-col items-center justify-center text-zinc-500 animate-in fade-in duration-300">
               <Search className="w-12 h-12 mb-4 opacity-50" />
               <p className="text-lg font-medium text-white/50">No memories found for "{debouncedSearchQuery}"</p>
               <p className="text-sm">Try a different keyword or tag</p>
           </div>
+          )
       ) : (
           /* Masonry Feed */
           <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
