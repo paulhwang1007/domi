@@ -1090,7 +1090,8 @@ export default function Dashboard() {
                     ) : (
                         /* View Mode */
                         <>
-                            <div className="mb-6">
+                            <div className="flex-1 overflow-y-auto custom-scrollbar -mr-4 pr-4">
+                                <div className="mb-6">
                                 <div className="flex items-center gap-2 mb-3">
                                     <span className="inline-block px-2 py-1 rounded-md bg-white/5 border border-white/5 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
                                         {selectedClip.type.toUpperCase()}
@@ -1130,11 +1131,9 @@ export default function Dashboard() {
                                             </a>
                                         </div>
                                     )}
+                                    {selectedClip.description && <p className="text-zinc-400 leading-relaxed whitespace-pre-wrap">{selectedClip.description}</p>}
                                 </div>
                             </div>
-
-                            <div className="flex-1 overflow-y-auto custom-scrollbar">
-                                {selectedClip.description && <p className="text-zinc-400 leading-relaxed whitespace-pre-wrap">{selectedClip.description}</p>}
                             </div>
                             
                             <div className="pt-6 mt-auto border-t border-white/5 flex gap-3">
