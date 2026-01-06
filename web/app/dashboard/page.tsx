@@ -10,7 +10,7 @@ import {
     MoreVertical, Trash, ExternalLink, X, Image as ImageIcon,
     FileText, Link as LinkIcon, StickyNote, FolderPlus, FolderMinus,
     ChevronDown, Filter, Check, CheckSquare, Ghost, Loader2, User, Copy, Pencil, Upload, Folder, ChevronRight, ImageOff,
-    Sparkles, Send, MessageSquare
+    Sparkles, Send, MessageSquare, RefreshCw
 } from 'lucide-react'
 import { z } from 'zod'
 
@@ -451,6 +451,14 @@ export default function Dashboard() {
         </div>
 
         <div className="flex items-center gap-3">
+            <button 
+                onClick={fetchData}
+                disabled={loading}
+                className={`p-2 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title="Refresh Feed"
+            >
+                <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+            </button>
             <button className="p-2 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors">
                 <Settings className="w-5 h-5" />
             </button>
