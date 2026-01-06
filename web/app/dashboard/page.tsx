@@ -779,9 +779,20 @@ export default function Dashboard() {
                     )}
 
                     {clip.type === 'url' && (
-                        <div className="h-32 bg-zinc-900 flex items-center justify-center text-zinc-600">
-                            <span className="text-4xl font-bold opacity-20">URL</span>
-                        </div>
+                        (clip.metadata as any)?.og_image ? (
+                             <div className="relative group/url aspect-video bg-black">
+                                <img src={(clip.metadata as any).og_image} className="w-full h-full object-cover opacity-80 group-hover/url:opacity-100 transition-opacity" alt="URL Preview" />
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="bg-black/50 backdrop-blur-sm p-3 rounded-full opacity-0 group-hover/url:opacity-100 transition-all transform scale-90 group-hover/url:scale-100">
+                                        <LinkIcon className="w-6 h-6 text-white" />
+                                    </div>
+                                </div>
+                             </div>
+                        ) : (
+                            <div className="h-32 bg-zinc-900 flex items-center justify-center text-zinc-600">
+                                <span className="text-4xl font-bold opacity-20">URL</span>
+                            </div>
+                        )
                     )}
 
                     {clip.type === 'pdf' && (
@@ -864,11 +875,18 @@ export default function Dashboard() {
                      )}
 
                      {selectedClip.type === 'url' && (
-                         <div className="text-center">
-                             <div className="w-32 h-32 rounded-2xl bg-zinc-800 flex items-center justify-center mb-6 mx-auto">
-                                <span className="text-4xl font-bold text-zinc-600">URL</span>
-                             </div>
-                             <a href={selectedClip.src_url} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-4 text-lg">
+                         <div className="text-center w-full h-full flex flex-col items-center justify-center p-8">
+                             {(selectedClip.metadata as any)?.og_image ? (
+                                <div className="w-full max-w-lg aspect-video rounded-2xl overflow-hidden shadow-2xl mb-8 relative group border border-white/10">
+                                    <img src={(selectedClip.metadata as any).og_image} className="w-full h-full object-cover" alt="Preview" />
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                                </div>
+                             ) : (
+                                <div className="w-32 h-32 rounded-2xl bg-zinc-800 flex items-center justify-center mb-6 mx-auto shadow-xl">
+                                    <span className="text-4xl font-bold text-zinc-600">URL</span>
+                                </div>
+                             )}
+                             <a href={selectedClip.src_url} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-4 text-lg font-medium break-all max-w-md line-clamp-2 text-center">
                                  {selectedClip.src_url}
                              </a>
                          </div>
@@ -1096,10 +1114,21 @@ export default function Dashboard() {
                                     </div>
 
                                     {selectedClip.type === 'url' && (
-                                        <a href={selectedClip.src_url} target="_blank" className="flex items-center gap-2 text-sm text-zinc-400 hover:text-indigo-400 transition-colors truncate w-fit">
-                                            <ExternalLink className="w-4 h-4" />
-                                            {selectedClip.src_url}
-                                        </a>
+                                        <div className="flex flex-col gap-3">
+                                            {(selectedClip.metadata as any)?.og_image && (
+                                                <div className="rounded-xl overflow-hidden border border-white/10 relative group">
+                                                    <img src={(selectedClip.metadata as any).og_image} className="w-full h-auto max-h-64 object-cover" alt="Preview" />
+                                                    <a href={selectedClip.src_url} target="_blank" className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <ExternalLink className="w-8 h-8 text-white" />
+                                                    </a>
+                                                </div>
+                                            )}
+                                            <a href={selectedClip.src_url} target="_blank" className="flex items-center gap-2 text-sm text-zinc-400 hover:text-indigo-400 transition-colors truncate w-fit bg-white/5 px-3 py-2 rounded-lg border border-white/5 hover:border-indigo-500/30">
+                                                <LinkIcon className="w-4 h-4" />
+                                                <span className="truncate max-w-[300px]">{selectedClip.src_url}</span>
+                                                <ExternalLink className="w-3 h-3 opacity-50" />
+                                            </a>
+                                        </div>
                                     )}
                                 </div>
                             </div>

@@ -55,15 +55,45 @@ serve(async (req) => {
     // 3. Prepare Content
     let contentToAnalyze = ""
     
-    if (record.type === 'url' && record.content) {
-      // If it's a URL, record.content should be the URL.
-      // We try to fetch the text content.
+    // Prioritize src_url for 'url' type, or fallback to content
+    const urlToFetch = record.src_url || record.content
+
+    if (record.type === 'url' && urlToFetch) {
+      // If it's a URL, we try to fetch the text content.
       try {
-        const response = await fetch(record.content)
+        // 1. Check for YouTube
+        let imageUrl = ""
+        const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i
+        const ytMatch = urlToFetch.match(youtubeRegex)
+        
+        if (ytMatch && ytMatch[1]) {
+            imageUrl = `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`
+        }
+
+        // Assign immediately so we persist it even if fetch fails
+        record.extractedImageUrl = imageUrl
+
+        const response = await fetch(urlToFetch)
         const html = await response.text()
+        
+        // 2. Fallback to Open Graph / Twitter Image if not found yet (or extract anyway)
+        if (!imageUrl) {
+            const ogImageMatch = html.match(/<meta property="og:image" content="([^"]+)"/i)
+            const twitterImageMatch = html.match(/<meta name="twitter:image" content="([^"]+)"/i)
+            
+            if (ogImageMatch && ogImageMatch[1]) imageUrl = ogImageMatch[1]
+            else if (twitterImageMatch && twitterImageMatch[1]) imageUrl = twitterImageMatch[1]
+            
+            // Update if found in HTML
+            if (imageUrl) record.extractedImageUrl = imageUrl
+        }
         
         // Very basic extraction: remove tags. In production use a parser.
         contentToAnalyze = html.replace(/<[^>]*>?/gm, ' ').slice(0, 10000) // Limit context
+        
+        // Attach image URL to record context for next step
+        record.extractedImageUrl = imageUrl
+
       } catch (e) {
         console.error("Failed to fetch URL", e)
         contentToAnalyze = record.title || "No content" // Fallback
@@ -113,7 +143,8 @@ serve(async (req) => {
       metadata: { 
         ...record.metadata,
         summary: metadata.summary,
-        auto_title: metadata.title
+        auto_title: metadata.title,
+        og_image: record.extractedImageUrl || record.metadata?.og_image // Persist extracted image
       },
       tags: uniqueTags,
       status: 'processed'
