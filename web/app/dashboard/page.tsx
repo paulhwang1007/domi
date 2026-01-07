@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Search, Plus, Grid, List, Folder, MoreVertical, X, Sparkles, MessageSquare, Send, ChevronRight, LogOut, Settings, Trash, Edit2, Pencil, Check, Upload, FileText, Image as ImageIcon, Link as LinkIcon, Download, Loader2, ArrowRight, FolderMinus, ChevronDown, Filter, CheckSquare, Ghost, User, Copy, ImageOff, RefreshCw, Sun, Moon, Laptop, LayoutGrid, FolderPlus, ExternalLink, StickyNote } from "lucide-react"
+import { Search, Plus, Grid, List, Folder, MoreVertical, X, Sparkles, MessageSquare, Send, ChevronRight, LogOut, Settings, Trash, Edit2, Pencil, Check, Upload, FileText, Image as ImageIcon, Link as LinkIcon, Download, Loader2, ArrowRight, FolderMinus, ChevronDown, Filter, CheckSquare, Ghost, User, Copy, ImageOff, RefreshCw, Sun, Moon, Laptop, LayoutGrid, FolderPlus, ExternalLink, StickyNote, Briefcase, Heart, Star, Zap, Code, Music, Video, Book, Globe, Home, Work, GraduationCap, Gamepad, Monitor } from "lucide-react"
 import { useTheme } from 'next-themes'
 import { z } from 'zod'
 
@@ -31,6 +31,24 @@ const COLOR_VARIANTS: Record<string, { bg: string, text: string, bgSoft: string,
     rose: { bg: 'bg-rose-500', text: 'text-rose-400', bgSoft: 'bg-rose-500/10', border: 'border-rose-500' },
     orange: { bg: 'bg-orange-500', text: 'text-orange-400', bgSoft: 'bg-orange-500/10', border: 'border-orange-500' },
     amber: { bg: 'bg-amber-500', text: 'text-amber-400', bgSoft: 'bg-amber-500/10', border: 'border-amber-500' },
+}
+
+const ICON_MAP: Record<string, any> = {
+    Folder: Folder,
+    Briefcase: Briefcase,
+    Heart: Heart,
+    Star: Star,
+    Zap: Zap,
+    Code: Code,
+    Music: Music,
+    Image: ImageIcon,
+    Video: Video,
+    Book: Book,
+    Globe: Globe,
+    Home: Home,
+    Monitor: Monitor,
+    GraduationCap: GraduationCap,
+    Gamepad: Gamepad
 }
 
 // --- Mock Data ---
@@ -62,8 +80,9 @@ export default function Dashboard() {
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false)
   const [newGroupTitle, setNewGroupTitle] = useState('')
   const [newGroupColor, setNewGroupColor] = useState('indigo') // Default color
+  const [newGroupIcon, setNewGroupIcon] = useState('Folder') // Default icon
   const [isEditGroupModalOpen, setIsEditGroupModalOpen] = useState(false)
-  const [editingGroup, setEditingGroup] = useState<{id: string, title: string, color: string} | null>(null)
+  const [editingGroup, setEditingGroup] = useState<{id: string, title: string, color: string, icon?: string} | null>(null)
 
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
@@ -268,6 +287,7 @@ export default function Dashboard() {
   const { data, error } = await supabase.from('groups').insert({
       title: newGroupTitle,
       color: newGroupColor,
+      icon: newGroupIcon,
       user_id: user.id
   }).select().single()
 
@@ -275,6 +295,7 @@ export default function Dashboard() {
       setGroups([{ ...data, count: 0 }, ...groups])
       setNewGroupTitle('')
       setNewGroupColor('indigo') // Reset to default
+      setNewGroupIcon('Folder') // Reset to default
       setIsGroupModalOpen(false)
   }
 }
@@ -287,11 +308,11 @@ const handleUpdateGroup = async () => {
 
     const { error } = await supabase
         .from('groups')
-        .update({ title: editingGroup.title, color: editingGroup.color })
+        .update({ title: editingGroup.title, color: editingGroup.color, icon: editingGroup.icon })
         .eq('id', editingGroup.id)
 
     if (!error) {
-        setGroups(groups.map(g => g.id === editingGroup.id ? { ...g, title: editingGroup.title, color: editingGroup.color } : g))
+        setGroups(groups.map(g => g.id === editingGroup.id ? { ...g, title: editingGroup.title, color: editingGroup.color, icon: editingGroup.icon } : g))
         setIsEditGroupModalOpen(false)
         setEditingGroup(null)
     }
@@ -748,7 +769,10 @@ const handleUpdateGroup = async () => {
                                     )}
                                 </div>
                                 <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${COLOR_VARIANTS[group.color]?.bgSoft || 'bg-indigo-500/10'} ${COLOR_VARIANTS[group.color]?.text || 'text-indigo-400'} group-hover:scale-110 transition-transform`}>
-                                    <Folder className="w-8 h-8" />
+                                    {(() => {
+                                        const IconComponent = ICON_MAP[group.icon || 'Folder'] || Folder
+                                        return <IconComponent className="w-8 h-8" />
+                                    })()}
                                 </div>
                                 <div className="text-center">
                                     <h3 className="font-semibold text-foreground mb-1">{group.title}</h3>
@@ -1634,19 +1658,39 @@ const handleUpdateGroup = async () => {
                   />
                   
                   {/* Color Picker */}
-                  <div className="mb-8">
+                  <div className="mb-6">
                       <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 block">Color</label>
-                      <div className="flex gap-3">
+                      <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
                           {Object.keys(COLOR_VARIANTS).map((c) => (
                               <button 
                                   key={c}
                                   onClick={() => setNewGroupColor(c)}
-                                  className={`w-8 h-8 rounded-full border-2 transition-all ${
+                                  className={`w-8 h-8 rounded-full border-2 transition-all shrink-0 ${
                                       newGroupColor === c 
                                       ? `border-foreground scale-110 shadow-lg ${COLOR_VARIANTS[c].bg}` 
                                       : `border-transparent opacity-50 hover:opacity-100 ${COLOR_VARIANTS[c].bg}`
                                   }`}
                               />
+                          ))}
+                      </div>
+                  </div>
+
+                  {/* Icon Picker */}
+                  <div className="mb-8">
+                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 block">Icon</label>
+                      <div className="grid grid-cols-5 gap-3">
+                          {Object.entries(ICON_MAP).map(([name, Icon]) => (
+                              <button 
+                                  key={name}
+                                  onClick={() => setNewGroupIcon(name)}
+                                  className={`aspect-square rounded-xl flex items-center justify-center transition-all ${
+                                      newGroupIcon === name 
+                                      ? 'bg-secondary text-foreground ring-2 ring-indigo-500' 
+                                      : 'bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground'
+                                  }`}
+                              >
+                                  <Icon className="w-5 h-5" />
+                              </button>
                           ))}
                       </div>
                   </div>
@@ -1688,19 +1732,39 @@ const handleUpdateGroup = async () => {
                  />
                  
                  {/* Color Picker */}
-                  <div className="mb-8">
+                  <div className="mb-6">
                       <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 block">Color</label>
-                      <div className="flex gap-3">
+                      <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
                           {Object.keys(COLOR_VARIANTS).map((c) => (
                               <button 
                                   key={c}
                                   onClick={() => setEditingGroup({...editingGroup, color: c})}
-                                  className={`w-8 h-8 rounded-full border-2 transition-all ${
+                                  className={`w-8 h-8 rounded-full border-2 transition-all shrink-0 ${
                                       editingGroup.color === c 
                                       ? `border-foreground scale-110 shadow-lg ${COLOR_VARIANTS[c].bg}` 
                                       : `border-transparent opacity-50 hover:opacity-100 ${COLOR_VARIANTS[c].bg}`
                                   }`}
                               />
+                          ))}
+                      </div>
+                  </div>
+
+                  {/* Icon Picker */}
+                  <div className="mb-8">
+                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 block">Icon</label>
+                      <div className="grid grid-cols-5 gap-3">
+                          {Object.entries(ICON_MAP).map(([name, Icon]) => (
+                              <button 
+                                  key={name}
+                                  onClick={() => setEditingGroup({...editingGroup, icon: name})}
+                                  className={`aspect-square rounded-xl flex items-center justify-center transition-all ${
+                                      editingGroup.icon === name || (!editingGroup.icon && name === 'Folder')
+                                      ? 'bg-secondary text-foreground ring-2 ring-indigo-500' 
+                                      : 'bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground'
+                                  }`}
+                              >
+                                  <Icon className="w-5 h-5" />
+                              </button>
                           ))}
                       </div>
                   </div>
