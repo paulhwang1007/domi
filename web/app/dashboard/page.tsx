@@ -747,7 +747,8 @@ const handleUpdateGroup = async () => {
                                     <div className="flex items-center gap-1">
                                         <button 
                                             onClick={(e) => { e.stopPropagation(); setEditingGroup(group); setIsEditGroupModalOpen(true) }}
-                                            className="p-2 opacity-0 group-hover:opacity-100 rounded-full bg-secondary dark:bg-zinc-700 text-muted-foreground hover:text-foreground transition-all border border-border"
+                                            className="p-2 opacity-0 group-hover:opacity-100 rounded-full text-muted-foreground hover:text-foreground transition-all border border-border"
+                                            style={{ backgroundColor: theme === 'dark' ? '#3f3f46' : '#ffffff' }}
                                             title="Edit Group"
                                         >
                                             <Pencil className="w-3 h-3" />
@@ -804,7 +805,7 @@ const handleUpdateGroup = async () => {
           <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="w-full h-[60vh] flex flex-col items-center justify-center text-center p-8 border-2 border-dashed border-white/5 rounded-3xl bg-white/5"
+              className="w-full h-[60vh] flex flex-col items-center justify-center text-center p-8 border-2 border-dashed border-border rounded-3xl bg-secondary/10"
           >
               <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-indigo-500/20 to-purple-500/20 flex items-center justify-center mb-6">
                   <Sparkles className="w-12 h-12 text-indigo-400 animate-pulse" />
