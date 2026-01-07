@@ -5,13 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { 
-    LayoutGrid, List, Plus, Search, LogOut, Settings, 
-    MoreVertical, Trash, ExternalLink, X, Image as ImageIcon,
-    FileText, Link as LinkIcon, StickyNote, FolderPlus, FolderMinus,
-    ChevronDown, Filter, Check, CheckSquare, Ghost, Loader2, User, Copy, Pencil, Upload, Folder, ChevronRight, ImageOff,
-    Sparkles, Send, MessageSquare, RefreshCw, Sun, Moon, Laptop
-} from 'lucide-react'
+import { Search, Plus, Grid, List, Folder, MoreVertical, X, Sparkles, MessageSquare, Send, ChevronRight, LogOut, Settings, Trash, Edit2, Pencil, Check, Upload, FileText, Image as ImageIcon, Link as LinkIcon, Download, Loader2, ArrowRight, FolderMinus, ChevronDown, Filter, CheckSquare, Ghost, User, Copy, ImageOff, RefreshCw, Sun, Moon, Laptop, LayoutGrid, FolderPlus, ExternalLink, StickyNote } from "lucide-react"
 import { useTheme } from 'next-themes'
 import { z } from 'zod'
 
@@ -26,6 +20,18 @@ const ClipSchema = z.object({
 const GroupSchema = z.object({
     title: z.string().min(1, "Group Name is required").max(50, "Group Name is too long")
 })
+
+const COLOR_VARIANTS: Record<string, { bg: string, text: string, bgSoft: string, border: string }> = {
+    indigo: { bg: 'bg-indigo-500', text: 'text-indigo-400', bgSoft: 'bg-indigo-500/10', border: 'border-indigo-500' },
+    blue: { bg: 'bg-blue-500', text: 'text-blue-400', bgSoft: 'bg-blue-500/10', border: 'border-blue-500' },
+    cyan: { bg: 'bg-cyan-500', text: 'text-cyan-400', bgSoft: 'bg-cyan-500/10', border: 'border-cyan-500' },
+    emerald: { bg: 'bg-emerald-500', text: 'text-emerald-400', bgSoft: 'bg-emerald-500/10', border: 'border-emerald-500' },
+    purple: { bg: 'bg-purple-500', text: 'text-purple-400', bgSoft: 'bg-purple-500/10', border: 'border-purple-500' },
+    pink: { bg: 'bg-pink-500', text: 'text-pink-400', bgSoft: 'bg-pink-500/10', border: 'border-pink-500' },
+    rose: { bg: 'bg-rose-500', text: 'text-rose-400', bgSoft: 'bg-rose-500/10', border: 'border-rose-500' },
+    orange: { bg: 'bg-orange-500', text: 'text-orange-400', bgSoft: 'bg-orange-500/10', border: 'border-orange-500' },
+    amber: { bg: 'bg-amber-500', text: 'text-amber-400', bgSoft: 'bg-amber-500/10', border: 'border-amber-500' },
+}
 
 // --- Mock Data ---
 const MOCK_CLIPS = []
@@ -55,6 +61,9 @@ export default function Dashboard() {
   // Group Creation State
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false)
   const [newGroupTitle, setNewGroupTitle] = useState('')
+  const [newGroupColor, setNewGroupColor] = useState('indigo') // Default color
+  const [isEditGroupModalOpen, setIsEditGroupModalOpen] = useState(false)
+  const [editingGroup, setEditingGroup] = useState<{id: string, title: string, color: string} | null>(null)
 
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
@@ -249,27 +258,45 @@ export default function Dashboard() {
 
   const handleCreateGroup = async () => {
     // Validation
-    const result = GroupSchema.safeParse({ title: newGroupTitle })
-    if (!result.success) {
-        setFormErrors(result.error.issues.map(e => e.message))
-        return
-    }
-    setFormErrors([])
-
-    const color = ['indigo', 'emerald', 'purple', 'rose', 'orange'][Math.floor(Math.random() * 5)]
-    
-    const { data, error } = await supabase.from('groups').insert({
-        title: newGroupTitle,
-        color: color,
-        user_id: user.id
-    }).select().single()
-
-    if (data) {
-        setGroups([{ ...data, count: 0 }, ...groups])
-        setNewGroupTitle('')
-        setIsGroupModalOpen(false)
-    }
+  const result = GroupSchema.safeParse({ title: newGroupTitle })
+  if (!result.success) {
+      setFormErrors(result.error.issues.map(e => e.message))
+      return
   }
+  setFormErrors([])
+
+  const { data, error } = await supabase.from('groups').insert({
+      title: newGroupTitle,
+      color: newGroupColor,
+      user_id: user.id
+  }).select().single()
+
+  if (data) {
+      setGroups([{ ...data, count: 0 }, ...groups])
+      setNewGroupTitle('')
+      setNewGroupColor('indigo') // Reset to default
+      setIsGroupModalOpen(false)
+  }
+}
+
+const handleUpdateGroup = async () => {
+    if (!editingGroup) return
+
+    // Validation
+    if (!editingGroup.title.trim()) return
+
+    const { error } = await supabase
+        .from('groups')
+        .update({ title: editingGroup.title, color: editingGroup.color })
+        .eq('id', editingGroup.id)
+
+    if (!error) {
+        setGroups(groups.map(g => g.id === editingGroup.id ? { ...g, title: editingGroup.title, color: editingGroup.color } : g))
+        setIsEditGroupModalOpen(false)
+        setEditingGroup(null)
+    }
+}
+  
 
   const handleDeleteGroup = async (groupId: string, e: React.MouseEvent) => {
       e.stopPropagation()
@@ -702,6 +729,14 @@ export default function Dashboard() {
                                             {selectedItems.has(group.id) && <Check className="w-3 h-3 text-white" />}
                                         </div>
                                     ) : (
+                                    <div className="flex items-center gap-1">
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); setEditingGroup(group); setIsEditGroupModalOpen(true) }}
+                                            className="p-2 opacity-0 group-hover:opacity-100 rounded-full bg-secondary text-muted-foreground hover:text-foreground transition-all border border-border"
+                                            title="Edit Group"
+                                        >
+                                            <Pencil className="w-3 h-3" />
+                                        </button>
                                         <button 
                                             onClick={(e) => { e.stopPropagation(); setDeleteConfirmation(group.id) }}
                                             className="p-2 opacity-0 group-hover:opacity-100 rounded-full bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all border border-red-500/20"
@@ -709,9 +744,10 @@ export default function Dashboard() {
                                         >
                                             <Trash className="w-3 h-3" />
                                         </button>
+                                    </div>
                                     )}
                                 </div>
-                                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center bg-${group.color}-500/10 text-${group.color}-400 group-hover:scale-110 transition-transform`}>
+                                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${COLOR_VARIANTS[group.color]?.bgSoft || 'bg-indigo-500/10'} ${COLOR_VARIANTS[group.color]?.text || 'text-indigo-400'} group-hover:scale-110 transition-transform`}>
                                     <Folder className="w-8 h-8" />
                                 </div>
                                 <div className="text-center">
@@ -1586,17 +1622,36 @@ export default function Dashboard() {
                  className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity animate-in fade-in duration-200" 
                  onClick={() => setIsGroupModalOpen(false)}
              />
-             <div className="relative w-full max-w-md bg-popover border border-border rounded-3xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-200">
-                 <h2 className="text-xl font-bold text-foreground mb-4">Create New Group</h2>
-                 <input 
-                    type="text" 
-                    placeholder="Group Name" 
-                    className="w-full bg-secondary/50 border border-border rounded-xl px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/50 mb-6"
-                    value={newGroupTitle}
-                    onChange={(e) => setNewGroupTitle(e.target.value)}
-                    autoFocus
-                 />
-                 <div className="flex justify-end gap-3">
+              <div className="relative w-full max-w-md bg-popover border border-border rounded-3xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-200">
+                  <h2 className="text-xl font-bold text-foreground mb-4">Create New Group</h2>
+                  <input 
+                     type="text" 
+                     placeholder="Group Name" 
+                     className="w-full bg-secondary/50 border border-border rounded-xl px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/50 mb-6"
+                     value={newGroupTitle}
+                     onChange={(e) => setNewGroupTitle(e.target.value)}
+                     autoFocus
+                  />
+                  
+                  {/* Color Picker */}
+                  <div className="mb-8">
+                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 block">Color</label>
+                      <div className="flex gap-3">
+                          {Object.keys(COLOR_VARIANTS).map((c) => (
+                              <button 
+                                  key={c}
+                                  onClick={() => setNewGroupColor(c)}
+                                  className={`w-8 h-8 rounded-full border-2 transition-all ${
+                                      newGroupColor === c 
+                                      ? `border-foreground scale-110 shadow-lg ${COLOR_VARIANTS[c].bg}` 
+                                      : `border-transparent opacity-50 hover:opacity-100 ${COLOR_VARIANTS[c].bg}`
+                                  }`}
+                              />
+                          ))}
+                      </div>
+                  </div>
+
+                  <div className="flex justify-end gap-3">
                      <button 
                          onClick={() => setIsGroupModalOpen(false)}
                          className="px-6 py-2 rounded-xl text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors"
@@ -1612,8 +1667,61 @@ export default function Dashboard() {
                  </div>
              </div>
         </div>
+       )}
 
-      )}
+       {/* Edit Group Modal */}
+       {isEditGroupModalOpen && editingGroup && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+             <div 
+                 className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity animate-in fade-in duration-200" 
+                 onClick={() => setIsEditGroupModalOpen(false)}
+             />
+             <div className="relative w-full max-w-md bg-popover border border-border rounded-3xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-200">
+                 <h2 className="text-xl font-bold text-foreground mb-4">Edit Group</h2>
+                 <input 
+                    type="text" 
+                    placeholder="Group Name" 
+                    className="w-full bg-secondary/50 border border-border rounded-xl px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/50 mb-6"
+                    value={editingGroup.title}
+                    onChange={(e) => setEditingGroup({...editingGroup, title: e.target.value})}
+                    autoFocus
+                 />
+                 
+                 {/* Color Picker */}
+                  <div className="mb-8">
+                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 block">Color</label>
+                      <div className="flex gap-3">
+                          {Object.keys(COLOR_VARIANTS).map((c) => (
+                              <button 
+                                  key={c}
+                                  onClick={() => setEditingGroup({...editingGroup, color: c})}
+                                  className={`w-8 h-8 rounded-full border-2 transition-all ${
+                                      editingGroup.color === c 
+                                      ? `border-foreground scale-110 shadow-lg ${COLOR_VARIANTS[c].bg}` 
+                                      : `border-transparent opacity-50 hover:opacity-100 ${COLOR_VARIANTS[c].bg}`
+                                  }`}
+                              />
+                          ))}
+                      </div>
+                  </div>
+
+                 <div className="flex justify-end gap-3">
+                     <button 
+                         onClick={() => setIsEditGroupModalOpen(false)}
+                         className="px-6 py-2 rounded-xl text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors"
+                     >
+                         Cancel
+                     </button>
+                     <button 
+                         onClick={handleUpdateGroup}
+                         className="px-6 py-2 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20"
+                     >
+                         Save Changes
+                     </button>
+                 </div>
+             </div>
+        </div>
+       )}
 
       {/* Add Existing to Group Modal */}
       {isAddToGroupModalOpen && activeGroupFilter && (
