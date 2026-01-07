@@ -10,6 +10,11 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'Domi',
   description: 'Capture and organize your digital life.',
+  icons: {
+    icon: '/domi_icon.png',
+    shortcut: '/domi_icon.png',
+    apple: '/domi_icon.png',
+  },
 }
 
 export default function RootLayout({
