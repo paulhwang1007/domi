@@ -715,6 +715,29 @@ const handleUpdateGroup = async () => {
             </div>
           ) : (
           /* Groups Grid View */
+          filteredGroups.length === 0 && !debouncedSearchQuery ? (
+               /* Empty Groups State */
+               <motion.div 
+                   initial={{ opacity: 0, scale: 0.95 }}
+                   animate={{ opacity: 1, scale: 1 }}
+                   className="w-full h-[60vh] flex flex-col items-center justify-center text-center p-8 border-2 border-dashed border-border rounded-3xl bg-secondary/10"
+               >
+                   <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-indigo-500/20 to-purple-500/20 flex items-center justify-center mb-6">
+                       <FolderPlus className="w-12 h-12 text-indigo-400 animate-pulse" />
+                   </div>
+                   <h2 className="text-2xl font-bold text-foreground mb-2">Create your first Group</h2>
+                   <p className="text-muted-foreground max-w-md mb-8">
+                       Groups help you organize your memories. Create one to get started.
+                   </p>
+                   <button 
+                       onClick={() => setIsGroupModalOpen(true)}
+                       className="px-8 py-3 bg-indigo-600 text-white font-bold rounded-full hover:scale-105 transition-transform shadow-[0_0_20px_rgba(79,70,229,0.3)] flex items-center gap-2"
+                   >
+                       <FolderPlus className="w-5 h-5" />
+                       Create Group
+                   </button>
+               </motion.div>
+          ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
               {filteredGroups.length === 0 && debouncedSearchQuery ? (
                   <div className="col-span-full h-64 flex flex-col items-center justify-center text-muted-foreground animate-in fade-in duration-300">
@@ -783,7 +806,7 @@ const handleUpdateGroup = async () => {
                   </>
               )}
           </div>
-
+          )
       )) : (
       /* Masonry Feed */
       loading ? (
