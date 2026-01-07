@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Search, Plus, Grid, List, Folder, MoreVertical, X, Sparkles, MessageSquare, Send, ChevronRight, LogOut, Settings, Trash, Edit2, Pencil, Check, Upload, FileText, Image as ImageIcon, Link as LinkIcon, Download, Loader2, ArrowRight, FolderMinus, ChevronDown, Filter, CheckSquare, Ghost, User, Copy, ImageOff, RefreshCw, Sun, Moon, Laptop, LayoutGrid, FolderPlus, ExternalLink, StickyNote, Briefcase, Heart, Star, Zap, Code, Music, Video, Book, Globe, Home, Work, GraduationCap, Gamepad, Monitor } from "lucide-react"
+import { Search, Plus, Grid, List, Folder, MoreVertical, X, Sparkles, MessageSquare, Send, ChevronRight, LogOut, Settings, Trash, Edit2, Pencil, Check, Upload, FileText, Image as ImageIcon, Link as LinkIcon, Download, Loader2, ArrowRight, FolderMinus, ChevronDown, Filter, CheckSquare, Ghost, User, Copy, ImageOff, RefreshCw, Sun, Moon, LayoutGrid, FolderPlus, ExternalLink, StickyNote, Briefcase, Heart, Star, Zap, Code, Music, Video, Book, Globe, Home, Work, GraduationCap, Gamepad, Monitor } from "lucide-react"
 import { useTheme } from 'next-themes'
 import { z } from 'zod'
 
@@ -22,15 +22,16 @@ const GroupSchema = z.object({
 })
 
 const COLOR_VARIANTS: Record<string, { bg: string, text: string, bgSoft: string, border: string }> = {
-    indigo: { bg: 'bg-indigo-500', text: 'text-indigo-400', bgSoft: 'bg-indigo-500/10', border: 'border-indigo-500' },
-    blue: { bg: 'bg-blue-500', text: 'text-blue-400', bgSoft: 'bg-blue-500/10', border: 'border-blue-500' },
-    cyan: { bg: 'bg-cyan-500', text: 'text-cyan-400', bgSoft: 'bg-cyan-500/10', border: 'border-cyan-500' },
+    red: { bg: 'bg-red-600', text: 'text-red-500', bgSoft: 'bg-red-500/10', border: 'border-red-500' },
+    orange: { bg: 'bg-orange-500', text: 'text-orange-400', bgSoft: 'bg-orange-500/10', border: 'border-orange-500' },
+    amber: { bg: 'bg-amber-500', text: 'text-amber-400', bgSoft: 'bg-amber-500/10', border: 'border-amber-500' },
     emerald: { bg: 'bg-emerald-500', text: 'text-emerald-400', bgSoft: 'bg-emerald-500/10', border: 'border-emerald-500' },
+    cyan: { bg: 'bg-cyan-500', text: 'text-cyan-400', bgSoft: 'bg-cyan-500/10', border: 'border-cyan-500' },
+    blue: { bg: 'bg-blue-500', text: 'text-blue-400', bgSoft: 'bg-blue-500/10', border: 'border-blue-500' },
+    indigo: { bg: 'bg-indigo-500', text: 'text-indigo-400', bgSoft: 'bg-indigo-500/10', border: 'border-indigo-500' },
     purple: { bg: 'bg-purple-500', text: 'text-purple-400', bgSoft: 'bg-purple-500/10', border: 'border-purple-500' },
     pink: { bg: 'bg-pink-500', text: 'text-pink-400', bgSoft: 'bg-pink-500/10', border: 'border-pink-500' },
     rose: { bg: 'bg-rose-500', text: 'text-rose-400', bgSoft: 'bg-rose-500/10', border: 'border-rose-500' },
-    orange: { bg: 'bg-orange-500', text: 'text-orange-400', bgSoft: 'bg-orange-500/10', border: 'border-orange-500' },
-    amber: { bg: 'bg-amber-500', text: 'text-amber-400', bgSoft: 'bg-amber-500/10', border: 'border-amber-500' },
 }
 
 const ICON_MAP: Record<string, any> = {
@@ -556,13 +557,6 @@ const handleUpdateGroup = async () => {
                                 >
                                     <Moon className="w-4 h-4" />
                                 </button>
-                                <button 
-                                    onClick={() => setTheme("system")} 
-                                    className={`flex-1 p-1.5 rounded-md flex items-center justify-center transition-colors ${theme === 'system' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-                                    title="System"
-                                >
-                                    <Laptop className="w-4 h-4" />
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -753,7 +747,7 @@ const handleUpdateGroup = async () => {
                                     <div className="flex items-center gap-1">
                                         <button 
                                             onClick={(e) => { e.stopPropagation(); setEditingGroup(group); setIsEditGroupModalOpen(true) }}
-                                            className="p-2 opacity-0 group-hover:opacity-100 rounded-full bg-secondary text-muted-foreground hover:text-foreground transition-all border border-border"
+                                            className="p-2 opacity-0 group-hover:opacity-100 rounded-full bg-secondary dark:bg-zinc-700 text-muted-foreground hover:text-foreground transition-all border border-border"
                                             title="Edit Group"
                                         >
                                             <Pencil className="w-3 h-3" />
@@ -1646,7 +1640,7 @@ const handleUpdateGroup = async () => {
                  className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity animate-in fade-in duration-200" 
                  onClick={() => setIsGroupModalOpen(false)}
              />
-              <div className="relative w-full max-w-md bg-popover border border-border rounded-3xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-200">
+              <div className="relative w-full max-w-lg bg-popover border border-border rounded-3xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-200">
                   <h2 className="text-xl font-bold text-foreground mb-4">Create New Group</h2>
                   <input 
                      type="text" 
@@ -1660,7 +1654,7 @@ const handleUpdateGroup = async () => {
                   {/* Color Picker */}
                   <div className="mb-6">
                       <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 block">Color</label>
-                      <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
+                      <div className="flex gap-3 p-2 pb-4">
                           {Object.keys(COLOR_VARIANTS).map((c) => (
                               <button 
                                   key={c}
@@ -1720,7 +1714,7 @@ const handleUpdateGroup = async () => {
                  className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity animate-in fade-in duration-200" 
                  onClick={() => setIsEditGroupModalOpen(false)}
              />
-             <div className="relative w-full max-w-md bg-popover border border-border rounded-3xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-200">
+             <div className="relative w-full max-w-lg bg-popover border border-border rounded-3xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-200">
                  <h2 className="text-xl font-bold text-foreground mb-4">Edit Group</h2>
                  <input 
                     type="text" 
@@ -1734,7 +1728,7 @@ const handleUpdateGroup = async () => {
                  {/* Color Picker */}
                   <div className="mb-6">
                       <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 block">Color</label>
-                      <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
+                      <div className="flex gap-3 p-2 pb-4">
                           {Object.keys(COLOR_VARIANTS).map((c) => (
                               <button 
                                   key={c}
