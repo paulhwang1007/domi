@@ -100,6 +100,10 @@ export default function Dashboard() {
   const [isAddToGroupModalOpen, setIsAddToGroupModalOpen] = useState(false)
   const [addToGroupTab, setAddToGroupTab] = useState<'create' | 'existing'>('create')
   const [existingToGroupSelection, setExistingToGroupSelection] = useState<Set<string>>(new Set())
+  
+  // Profile Actions State
+  const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false)
+  const [resetEmailSent, setResetEmailSent] = useState(false)
 
   // Add Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
@@ -459,14 +463,22 @@ const handleUpdateGroup = async () => {
   }
 
   const handleResetPassword = async () => {
+      setIsProfileOpen(false)
+      setResetEmailSent(false)
+      setIsResetPasswordModalOpen(true)
+  }
+
+  const handleSendResetPassword = async () => {
       if (!user?.email) return
+      
       const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
-          redirectTo: window.location.origin + '/dashboard?reset=true',
+          redirectTo: window.location.origin + '/auth/callback?next=/update-password',
       })
       if (error) {
           alert('Error sending reset email: ' + error.message)
       } else {
-          alert('Password reset email sent to ' + user.email)
+          setResetEmailSent(true)
+          // setResetPasswordModalOpen(false) // Optional: close automatically or let user close
       }
   }
 
@@ -1978,7 +1990,84 @@ const handleUpdateGroup = async () => {
            </div>
        )}
 
-      </main>
+       </main>
+
+      {/* Reset Password Modal */}
+      <AnimatePresence>
+          {isResetPasswordModalOpen && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                  <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      onClick={() => setIsResetPasswordModalOpen(false)}
+                      className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+                  />
+                  <motion.div 
+                      initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                      className="w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl relative overflow-hidden"
+                  >
+                      <div className="p-6 flex flex-col items-center text-center">
+                          <button 
+                              onClick={() => setIsResetPasswordModalOpen(false)}
+                              className="absolute top-4 right-4 p-2 rounded-full hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                              <X className="w-5 h-5" />
+                          </button>
+
+                          <div className={`w-16 h-16 rounded-2xl ${resetEmailSent ? 'bg-green-500/10' : 'bg-indigo-500/10'} flex items-center justify-center mb-6 transition-colors duration-500`}>
+                              {resetEmailSent ? (
+                                  <Check className="w-8 h-8 text-green-500" />
+                              ) : (
+                                  <Lock className="w-8 h-8 text-indigo-500" />
+                              )}
+                          </div>
+
+                          <h2 className="text-2xl font-bold mb-2">Reset Password</h2>
+                          
+                          {resetEmailSent ? (
+                              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                  <p className="text-muted-foreground mb-6">
+                                      We've sent a password reset link to <span className="font-semibold text-foreground">{user?.email}</span>.
+                                  </p>
+                                  <p className="text-sm text-muted-foreground mb-6 bg-secondary/50 p-3 rounded-lg">
+                                      Please check your inbox (and spam folder) and follow the link to create a new password.
+                                  </p>
+                                  <button 
+                                      onClick={() => setIsResetPasswordModalOpen(false)}
+                                      className="w-full py-3 bg-secondary hover:bg-secondary/80 text-foreground font-semibold rounded-xl transition-colors"
+                                  >
+                                      Close
+                                  </button>
+                              </div>
+                          ) : (
+                              <>
+                                  <p className="text-muted-foreground mb-6">
+                                      Send a password recovery email to <span className="font-semibold text-foreground">{user?.email}</span>?
+                                  </p>
+                                  <div className="w-full space-y-3">
+                                      <button 
+                                          onClick={handleSendResetPassword}
+                                          className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02]"
+                                      >
+                                          Send Reset Link
+                                      </button>
+                                      <button 
+                                          onClick={() => setIsResetPasswordModalOpen(false)}
+                                          className="w-full py-3 text-muted-foreground hover:text-foreground font-medium transition-colors"
+                                      >
+                                          Cancel
+                                      </button>
+                                  </div>
+                              </>
+                          )}
+                      </div>
+                  </motion.div>
+              </div>
+          )}
+      </AnimatePresence>
     </div>
   )
 }
