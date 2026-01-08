@@ -5,7 +5,8 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Search, Plus, Grid, List, Folder, MoreVertical, X, Sparkles, MessageSquare, Send, ChevronRight, LogOut, Settings, Trash, Edit2, Pencil, Check, Upload, FileText, Image as ImageIcon, Link as LinkIcon, Download, Loader2, ArrowRight, FolderMinus, ChevronDown, Filter, CheckSquare, Ghost, User, Copy, ImageOff, RefreshCw, Sun, Moon, LayoutGrid, FolderPlus, ExternalLink, StickyNote, Briefcase, Heart, Star, Zap, Code, Music, Video, Book, Globe, Home, Work, GraduationCap, Gamepad, Monitor, Lock } from "lucide-react"
+import { cn } from '@/lib/utils'
+import { Search, Plus, Grid, List, Folder, MoreVertical, X, Sparkles, MessageSquare, Send, ChevronRight, LogOut, Settings, Trash, Edit2, Pencil, Check, Upload, FileText, Image as ImageIcon, Link as LinkIcon, Download, Loader2, ArrowRight, FolderMinus, ChevronDown, Filter, CheckSquare, Ghost, User, Copy, ImageOff, RefreshCw, Sun, Moon, LayoutGrid, FolderPlus, ExternalLink, StickyNote, Briefcase, Heart, Star, Zap, Code, Music, Video, Book, Globe, Home, Work, GraduationCap, Gamepad, Monitor, AlertTriangle, Eye, EyeOff, Lock, Wand2 } from "lucide-react"
 import { useTheme } from 'next-themes'
 import { z } from 'zod'
 
@@ -104,6 +105,7 @@ export default function Dashboard() {
   // Profile Actions State
   const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false)
   const [resetEmailSent, setResetEmailSent] = useState(false)
+  const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false)
 
   // Add Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
@@ -483,13 +485,17 @@ const handleUpdateGroup = async () => {
   }
 
   const handleDeleteAccount = async () => {
-      if (!confirm('Are you sure you want to delete your account? This action cannot be undone and you will lose all your data.')) return
-      
+    setIsProfileOpen(false)
+    setIsDeleteAccountModalOpen(true)
+  }
+  
+  const confirmDeleteAccount = async () => {
       const { error } = await supabase.rpc('delete_own_account')
       
       if (error) {
           console.error('Error deleting account:', error)
-          alert('Failed to delete account. Please ensure you have set up the "delete_own_account" database function in Supabase.')
+          alert('Failed to delete account: ' + error.message)
+          setIsDeleteAccountModalOpen(false)
       } else {
           await supabase.auth.signOut()
           router.push('/')
@@ -2067,7 +2073,63 @@ const handleUpdateGroup = async () => {
                   </motion.div>
               </div>
           )}
+
       </AnimatePresence>
+
+      {/* Delete Account Modal */}
+      <AnimatePresence>
+          {isDeleteAccountModalOpen && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                  <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      onClick={() => setIsDeleteAccountModalOpen(false)}
+                      className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+                  />
+                  <motion.div 
+                      initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                      className="w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl relative overflow-hidden"
+                  >
+                      <div className="p-6 flex flex-col items-center text-center">
+                          <button 
+                              onClick={() => setIsDeleteAccountModalOpen(false)}
+                              className="absolute top-4 right-4 p-2 rounded-full hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                              <X className="w-5 h-5" />
+                          </button>
+
+                          <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center mb-6">
+                              <AlertTriangle className="w-8 h-8 text-red-500" />
+                          </div>
+
+                          <h2 className="text-2xl font-bold mb-2">Delete Account</h2>
+                          <p className="text-muted-foreground mb-6">
+                              Are you sure you want to delete your account? This action cannot be undone and you will lose all your data.
+                          </p>
+                          
+                          <div className="w-full space-y-3">
+                              <button 
+                                  onClick={confirmDeleteAccount}
+                                  className="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-lg shadow-red-500/20 transition-all hover:scale-[1.02]"
+                              >
+                                  Yes, I'm sure
+                              </button>
+                              <button 
+                                  onClick={() => setIsDeleteAccountModalOpen(false)}
+                                  className="w-full py-3 text-muted-foreground hover:text-foreground font-medium transition-colors"
+                              >
+                                  Cancel
+                              </button>
+                          </div>
+                      </div>
+                  </motion.div>
+              </div>
+          )}
+      </AnimatePresence>
+
     </div>
   )
 }
