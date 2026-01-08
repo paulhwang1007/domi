@@ -78,6 +78,7 @@ export default function LoginPage() {
             data: {
               full_name: name,
             },
+            emailRedirectTo: `${window.location.origin}/confirmed`,
           },
         })
         if (error) throw error
