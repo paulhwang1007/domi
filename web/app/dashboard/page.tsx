@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Search, Plus, Grid, List, Folder, MoreVertical, X, Sparkles, MessageSquare, Send, ChevronRight, LogOut, Settings, Trash, Edit2, Pencil, Check, Upload, FileText, Image as ImageIcon, Link as LinkIcon, Download, Loader2, ArrowRight, FolderMinus, ChevronDown, Filter, CheckSquare, Ghost, User, Copy, ImageOff, RefreshCw, Sun, Moon, LayoutGrid, FolderPlus, ExternalLink, StickyNote, Briefcase, Heart, Star, Zap, Code, Music, Video, Book, Globe, Home, Work, GraduationCap, Gamepad, Monitor } from "lucide-react"
+import { Search, Plus, Grid, List, Folder, MoreVertical, X, Sparkles, MessageSquare, Send, ChevronRight, LogOut, Settings, Trash, Edit2, Pencil, Check, Upload, FileText, Image as ImageIcon, Link as LinkIcon, Download, Loader2, ArrowRight, FolderMinus, ChevronDown, Filter, CheckSquare, Ghost, User, Copy, ImageOff, RefreshCw, Sun, Moon, LayoutGrid, FolderPlus, ExternalLink, StickyNote, Briefcase, Heart, Star, Zap, Code, Music, Video, Book, Globe, Home, Work, GraduationCap, Gamepad, Monitor, Lock } from "lucide-react"
 import { useTheme } from 'next-themes'
 import { z } from 'zod'
 
@@ -458,6 +458,33 @@ const handleUpdateGroup = async () => {
       router.refresh()
   }
 
+  const handleResetPassword = async () => {
+      if (!user?.email) return
+      const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+          redirectTo: window.location.origin + '/dashboard?reset=true',
+      })
+      if (error) {
+          alert('Error sending reset email: ' + error.message)
+      } else {
+          alert('Password reset email sent to ' + user.email)
+      }
+  }
+
+  const handleDeleteAccount = async () => {
+      if (!confirm('Are you sure you want to delete your account? This action cannot be undone and you will lose all your data.')) return
+      
+      const { error } = await supabase.rpc('delete_own_account')
+      
+      if (error) {
+          console.error('Error deleting account:', error)
+          alert('Failed to delete account. Please ensure you have set up the "delete_own_account" database function in Supabase.')
+      } else {
+          await supabase.auth.signOut()
+          router.push('/')
+          router.refresh()
+      }
+  }
+
   // Debouce Search Query
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -576,6 +603,22 @@ const handleUpdateGroup = async () => {
                     <div className="absolute right-0 top-full mt-2 w-48 bg-popover border border-border rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                         <div className="p-3 border-b border-border">
                             <p className="text-xs text-muted-foreground font-medium truncate">{user?.email}</p>
+                        </div>
+                        <div className="p-1 border-b border-border">
+                            <button 
+                                onClick={handleResetPassword}
+                                className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-secondary rounded-lg transition-colors flex items-center gap-2"
+                            >
+                                <Lock className="w-4 h-4 text-muted-foreground" />
+                                Reset Password
+                            </button>
+                            <button 
+                                onClick={handleDeleteAccount}
+                                className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-red-500/10 hover:text-red-500 rounded-lg transition-colors flex items-center gap-2 group"
+                            >
+                                <Trash className="w-4 h-4 text-muted-foreground group-hover:text-red-500 transition-colors" />
+                                Delete Account
+                            </button>
                         </div>
                         <div className="p-1">
                             <button 
