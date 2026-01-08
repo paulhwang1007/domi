@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
-import { Search, Plus, Grid, List, Folder, MoreVertical, X, Sparkles, MessageSquare, Send, ChevronRight, LogOut, Settings, Trash, Edit2, Pencil, Check, Upload, FileText, Image as ImageIcon, Link as LinkIcon, Download, Loader2, ArrowRight, FolderMinus, ChevronDown, Filter, CheckSquare, Ghost, User, Copy, ImageOff, RefreshCw, Sun, Moon, LayoutGrid, FolderPlus, ExternalLink, StickyNote, Briefcase, Heart, Star, Zap, Code, Music, Video, Book, Globe, Home, Work, GraduationCap, Gamepad, Monitor, AlertTriangle, Eye, EyeOff, Lock, Wand2 } from "lucide-react"
+import { Search, Plus, Grid, List, Folder, MoreVertical, X, Sparkles, MessageSquare, Send, ChevronRight, LogOut, Settings, Trash, Edit2, Pencil, Check, Upload, FileText, Image as ImageIcon, Link as LinkIcon, Download, Loader2, ArrowRight, FolderMinus, ChevronDown, Filter, CheckSquare, Ghost, User, Copy, ImageOff, RefreshCw, Sun, Moon, LayoutGrid, FolderPlus, ExternalLink, StickyNote, Briefcase, Heart, Star, Zap, Code, Music, Video, Book, Globe, Home, GraduationCap, Gamepad, Monitor, AlertTriangle, Eye, EyeOff, Lock, Wand2 } from "lucide-react"
 import { useTheme } from 'next-themes'
 import { z } from 'zod'
 
