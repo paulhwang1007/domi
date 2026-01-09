@@ -13,5 +13,7 @@ document.getElementById('capture-screenshot').addEventListener('click', () => {
 });
 
 document.getElementById('open-dashboard').addEventListener('click', () => {
-    chrome.tabs.create({ url: 'http://localhost:3000/dashboard' });
+    // Use configured URL or fallback
+    const dashboardUrl = (typeof CONFIG !== 'undefined' && CONFIG.WEB_URL) ? `${CONFIG.WEB_URL}/dashboard` : 'http://localhost:3000/dashboard';
+    chrome.tabs.create({ url: dashboardUrl });
 });

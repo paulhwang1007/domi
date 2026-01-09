@@ -18,6 +18,7 @@
   ],
   "host_permissions": [
     "http://localhost:3000/*",
+    "https://domi-ai.vercel.app/*",
     "https://*.supabase.co/*"
   ],
   "background": {
