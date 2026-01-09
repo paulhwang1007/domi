@@ -349,16 +349,45 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     else if (request.action === "SAVE_SCREENSHOT") {
          sendResponse({ success: true });
          
-         // Trigger selection UI in content script
-         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-             if (tabs[0]) {
-                 chrome.tabs.sendMessage(tabs[0].id, { action: "START_SELECTION" });
+         // Trigger selection UI in content script, injecting if necessary
+         chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+             const tab = tabs[0];
+             if (!tab) return;
+             
+             try {
+                // Try sending message first
+                await chrome.tabs.sendMessage(tab.id, { action: "START_SELECTION" });
+             } catch (err) {
+                 console.log("Domi: Content script not found, injecting...", err);
+                 // If failed, inject script and try again
+                 try {
+                     await chrome.scripting.executeScript({
+                         target: { tabId: tab.id },
+                         files: ['content.js']
+                     });
+                     // Give it a moment to initialize
+                     setTimeout(() => {
+                         chrome.tabs.sendMessage(tab.id, { action: "START_SELECTION" }).catch(e => console.error("Second attempt failed:", e));
+                     }, 100);
+                 } catch (injectionErr) {
+                     console.error("Domi: Failed to inject content script:", injectionErr);
+                     chrome.notifications.create({
+                        type: 'basic',
+                        iconUrl: 'icons/icon128.png', 
+                        title: 'Selection Failed',
+                        message: 'Could not load selection tool on this page. Try refreshing the page.'
+                    });
+                 }
              }
          });
     }
     else if (request.action === "CAPTURE_VISIBLE_AREA") {
         const area = request.area;
         chrome.tabs.captureVisibleTab(null, { format: 'png' }, (dataUrl) => {
+            if (chrome.runtime.lastError) {
+                console.error("Capture failed:", chrome.runtime.lastError.message);
+                return;
+            }
             // Send back to content script for cropping (since background can't use Canvas easily)
              chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
                  if (tabs[0]) {
@@ -366,6 +395,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         action: "CROP_IMAGE",
                         dataUrl: dataUrl,
                         area: area
+                     }).catch(err => {
+                         console.error("Failed to send CROP_IMAGE:", err);
+                         chrome.notifications.create({
+                            type: 'basic',
+                            iconUrl: 'icons/icon128.png', 
+                            title: 'Capture Error',
+                            message: 'Could not process screenshot. Please reload the page and try again.'
+                        });
                      });
                  }
              });
