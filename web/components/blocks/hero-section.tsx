@@ -8,7 +8,7 @@ import { ContainerScroll } from '@/components/ui/container-scroll-animation'
 import { cn } from '@/lib/utils'
 import { User } from '@supabase/supabase-js'
 import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Variants } from 'framer-motion'
+import { Variants, motion } from 'framer-motion'
 
 const transitionVariants = {
     item: {
