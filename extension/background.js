@@ -9,16 +9,23 @@ const PROJECT_REF = CONFIG.PROJECT_REF;
 
 // --- Authentication Helper ---
 async function getAccessToken() {
-    // 1. Try Cookies
     try {
+        // 1. Try Configured URL
         let cookies = await chrome.cookies.getAll({ url: WEB_URL }); 
-        if (cookies.length === 0) cookies = await chrome.cookies.getAll({ url: "http://127.0.0.1:3000" });
+        
+        // 2. Fallback: Try common localhost ports if WEB_URL didn't yield results
+        if (!cookies || cookies.length === 0) {
+            const localhostCookies = await chrome.cookies.getAll({ url: "http://localhost:3000" });
+            const loopbackCookies = await chrome.cookies.getAll({ url: "http://127.0.0.1:3000" });
+            cookies = [...localhostCookies, ...loopbackCookies];
+        }
         
         const tokenName = `sb-${PROJECT_REF}-auth-token`;
+        // Look for exact match or the standard Supabase pattern
         let cookie = cookies.find(c => c.name === tokenName) || cookies.find(c => c.name.startsWith('sb-') && c.name.endsWith('-auth-token'));
 
         if (cookie) {
-            console.log("DEBUG: Found Auth Cookie");
+            console.log("DEBUG: Found Auth Cookie", cookie.name);
             return parseToken(cookie.value);
         }
     } catch (e) {
