@@ -85,31 +85,19 @@ export function HeroSection({ user }: HeroSectionProps) {
                         <div className="mx-auto max-w-7xl px-6">
                             <div className="text-center sm:mx-auto lg:mr-auto lg:mt-0">
                                 <AnimatedGroup variants={transitionVariants}>
-                                    <Link
-                                        href="#link"
-                                        className="hover:bg-background dark:hover:border-t-border bg-muted group mx-auto flex w-fit items-center gap-4 rounded-full border p-1 pl-4 shadow-md shadow-black/5 transition-all duration-300 dark:border-t-white/5 dark:shadow-zinc-950">
-                                        <span className="text-foreground text-sm">Introducing Support for AI Models</span>
-                                        <span className="dark:border-background block h-4 w-0.5 border-l bg-white dark:bg-zinc-700"></span>
-
-                                        <div className="bg-background group-hover:bg-muted size-6 overflow-hidden rounded-full duration-500">
-                                            <div className="flex w-12 -translate-x-1/2 duration-500 ease-in-out group-hover:translate-x-0">
-                                                <span className="flex size-6">
-                                                    <ArrowRight className="m-auto size-3" />
-                                                </span>
-                                                <span className="flex size-6">
-                                                    <ArrowRight className="m-auto size-3" />
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </Link>
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-indigo-300 mb-8 backdrop-blur-sm mx-auto">
+                                        <Link href="#link">
+                                            <span>Domi 1.0 is now live</span>
+                                        </Link>
+                                    </div>
                         
                                     <h1
-                                        className="mt-8 max-w-4xl mx-auto text-balance text-6xl md:text-7xl lg:mt-16 xl:text-[5.25rem] font-bold tracking-tight text-foreground">
-                                        The AI-Powered Memory <br /> for the Web
+                                        className="mt-8 max-w-5xl mx-auto text-balance text-6xl md:text-7xl lg:mt-4 xl:text-[5.25rem] font-bold tracking-tight text-foreground">
+                                        The AI-Powered Memory <br /> for the <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-indigo-400 to-blue-400">Web</span>
                                     </h1>
                                     <p
                                         className="mx-auto mt-8 max-w-2xl text-balance text-lg text-muted-foreground">
-                                        Capture anything instantly, organize effortlessly with AI, and store for retrieval whenever you need it.
+                                        A powerful Chrome extension and web app to capture anything instantly, organize effortlessly with AI, and store for retrieval whenever you need it.
                                     </p>
                                 </AnimatedGroup>
 
@@ -125,37 +113,27 @@ export function HeroSection({ user }: HeroSectionProps) {
                                         },
                                         ...transitionVariants,
                                     }}
-                                    className="mt-12 flex flex-col items-center justify-center gap-2 md:flex-row">
+                                    className="mt-12 flex flex-col items-center justify-center gap-2">
                                     <div
                                         key={1}
-                                        className="bg-foreground/10 rounded-[14px] border p-0.5">
+                                        className="rounded-[14px]">
                                         <Button
                                             asChild
                                             size="lg"
-                                            className="rounded-xl px-5 text-base">
+                                            className="rounded-xl px-12 text-base bg-indigo-600 hover:bg-indigo-500 text-white font-semibold h-12 shadow-[0_0_40px_-10px_rgba(93,93,255,0.6)] w-full sm:w-[450px]">
                                             {user ? (
                                                 <Link href="/dashboard">
                                                     <span className="text-nowrap">Go to Dashboard</span>
+                                                    <ArrowRight className="ml-2 w-4 h-4" />
                                                 </Link>
                                             ) : (
                                                 <Link href="/login">
-                                                    <span className="text-nowrap">Start Building (Free)</span>
+                                                    <span className="text-nowrap">Get started for free</span>
                                                 </Link>
                                             )}
                                         </Button>
                                     </div>
-                                    {!user && (
-                                        <Button
-                                            key={2}
-                                            asChild
-                                            size="lg"
-                                            variant="ghost"
-                                            className="h-10.5 rounded-xl px-5">
-                                            <Link href="#link">
-                                                <span className="text-nowrap">Request a demo</span>
-                                            </Link>
-                                        </Button>
-                                    )}
+                                    <p className="mt-1 text-xs text-zinc-500 block w-full">No credit card required</p>
                                 </AnimatedGroup>
                             </div>
                         </div>
@@ -223,7 +201,7 @@ const HeroHeader = ({ user }: { user: User | null }) => {
             <nav
                 data-state={menuState && 'active'}
                 className="fixed top-0 left-0 z-50 w-full px-2 group">
-                <div className={cn('mx-auto mt-2 max-w-6xl px-6 transition-all duration-300 lg:px-12', isScrolled && 'bg-background/80 backdrop-blur-md max-w-4xl rounded-2xl border border-border mt-4 shadow-sm lg:px-5')}>
+                <div className={cn('mx-auto mt-2 max-w-6xl px-6 transition-all duration-300 lg:px-12 border border-transparent', isScrolled && 'bg-background/80 backdrop-blur-md max-w-4xl rounded-2xl border-border mt-4 shadow-sm lg:px-5')}>
                     <div className="relative flex flex-wrap items-center justify-between gap-6 py-3 lg:gap-0 lg:py-4">
                         <div className="flex w-full justify-between lg:w-auto">
                             <Link
@@ -279,7 +257,7 @@ const HeroHeader = ({ user }: { user: User | null }) => {
                                             asChild
                                             variant="outline"
                                             size="sm"
-                                            className={cn(isScrolled && 'lg:hidden')}>
+                                            className={cn(isScrolled && 'lg:hidden', 'border-white/10 text-white hover:bg-white/5 bg-transparent')}>
                                             <Link href="/login">
                                                 <span>Login</span>
                                             </Link>
@@ -287,7 +265,7 @@ const HeroHeader = ({ user }: { user: User | null }) => {
                                         <Button
                                             asChild
                                             size="sm"
-                                            className={cn(isScrolled && 'lg:hidden')}>
+                                            className={cn(isScrolled && 'lg:hidden', 'bg-indigo-600 hover:bg-indigo-500 text-white border-transparent')}>
                                             <Link href="/login">
                                                 <span>Sign Up</span>
                                             </Link>
@@ -295,7 +273,7 @@ const HeroHeader = ({ user }: { user: User | null }) => {
                                         <Button
                                             asChild
                                             size="sm"
-                                            className={cn(isScrolled ? 'lg:inline-flex' : 'hidden')}>
+                                            className={cn(isScrolled ? 'lg:inline-flex' : 'hidden', 'bg-indigo-600 hover:bg-indigo-500 text-white')}>
                                             <Link href="/login">
                                                 <span>Get Started</span>
                                             </Link>
