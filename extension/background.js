@@ -13,6 +13,17 @@ async function getAccessToken() {
         // 1. Try Configured URL
         let cookies = await chrome.cookies.getAll({ url: WEB_URL }); 
         
+        // 1b. Try Domain if URL failed (handles subdomain issues)
+        if (cookies.length === 0) {
+             try {
+                // Extract hostname safely
+                const urlObj = new URL(WEB_URL);
+                cookies = await chrome.cookies.getAll({ domain: urlObj.hostname });
+             } catch(e) { 
+                 // Ignore parsing errors
+             }
+        }
+        
         // 2. Fallback: Try common localhost ports if WEB_URL didn't yield results
         if (!cookies || cookies.length === 0) {
             const localhostCookies = await chrome.cookies.getAll({ url: "http://localhost:3000" });
