@@ -35,11 +35,17 @@ async function getAccessToken() {
     // 2. Fallback: Try reading LocalStorage from an open Dashboard tab
     console.log("DEBUG: Cookie failed. Trying LocalStorage from open tab...");
     try {
-        // Match patterns do not support ports. Query all localhost tabs.
-        const tabs = await chrome.tabs.query({ url: ["http://localhost/*", "http://127.0.0.1/*"] });
+        // Match patterns do not support ports. Query known dashboard URLs.
+        const dashboardPatterns = ["http://localhost/*", "http://127.0.0.1/*"];
+        if (WEB_URL && !WEB_URL.includes("localhost") && !WEB_URL.includes("127.0.0.1")) {
+            dashboardPatterns.push(`${WEB_URL}/*`);
+        }
+        
+        const tabs = await chrome.tabs.query({ url: dashboardPatterns });
         if (tabs.length > 0) {
-            // Find one that is actually port 3000
-            const dashboardTab = tabs.find(t => t.url && t.url.includes(":3000"));
+            // Prefer the configured WEB_URL if found, otherwise localhost
+            let dashboardTab = tabs.find(t => t.url && t.url.startsWith(WEB_URL));
+            if (!dashboardTab) dashboardTab = tabs.find(t => t.url && t.url.includes(":3000"));
             
             if (dashboardTab) {
                 const tabId = dashboardTab.id;
@@ -66,10 +72,16 @@ async function getAccessToken() {
                     }
                     
                     // Fallback: Check document.cookie manually just in case
-                    if (document.cookie.includes('sb-')) {
-                         console.log("Domi: Found sb- pattern in document.cookie");
+                    // Fallback: Check document.cookie manually just in case
+                    if (document.cookie) {
+                         console.log("Domi: Checking document.cookie", document.cookie);
+                         // Try strict match first
                          const match = document.cookie.split('; ').find(row => row.startsWith(`sb-${projectRef}-auth-token=`));
                          if (match) return match.split('=')[1];
+                         
+                         // Try looser match (any sb-*-auth-token)
+                         const looseMatch = document.cookie.split('; ').find(row => row.startsWith('sb-') && row.endsWith('-auth-token='));
+                         if (looseMatch) return looseMatch.split('=')[1];
                     }
 
                     console.log("Domi Probe Result:", debugInfo);
@@ -154,7 +166,7 @@ async function saveClip(type, data) {
             type: 'basic',
             iconUrl: 'icons/icon128.png', 
             title: 'Domi: Login Required',
-            message: 'Please log in to your Domi Dashboard (localhost:3000) to save.'
+            message: 'Could not find login session. Please log in to ' + WEB_URL
         });
         return;
     }
@@ -162,7 +174,9 @@ async function saveClip(type, data) {
     try {
         // 1. Get User ID
         const user = await getUser(token);
-        if (!user || !user.id) throw new Error("Could not validate user.");
+        if (!user || !user.id) {
+             throw new Error("Invalid User Token. Please log out and back in.");
+        }
 
         // 2. Prepare Payload
         const payload = {
@@ -189,7 +203,8 @@ async function saveClip(type, data) {
 
         if (!response.ok) {
             const errText = await response.text();
-            throw new Error(`DB Error: ${errText}`);
+            console.error("Supabase Save Error:", response.status, errText);
+            throw new Error(`Save Failed (${response.status}): ${errText.substring(0, 100)}...`);
         }
 
         const savedData = await response.json();
