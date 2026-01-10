@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { GlowCard } from '@/components/ui/spotlight-card'
 import { Search, Plus, Grid, List, Folder, MoreVertical, X, Sparkles, MessageSquare, Send, ChevronRight, LogOut, Settings, Trash, Edit2, Pencil, Check, Upload, FileText, Image as ImageIcon, Link as LinkIcon, Download, Loader2, ArrowRight, FolderMinus, ChevronDown, Filter, CheckSquare, Ghost, User, Copy, ImageOff, RefreshCw, Sun, Moon, LayoutGrid, FolderPlus, ExternalLink, StickyNote, Briefcase, Heart, Star, Zap, Code, Music, Video, Book, Globe, Home, GraduationCap, Gamepad, Monitor, AlertTriangle, Eye, EyeOff, Lock, Wand2 } from "lucide-react"
 import { useTheme } from 'next-themes'
 import { z } from 'zod'
@@ -962,7 +963,12 @@ const handleUpdateGroup = async () => {
                             </div>
                         </div>
                     )}
-                    <div className={`bg-card backdrop-blur-sm border rounded-2xl overflow-hidden hover:border-border/80 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 cursor-pointer ${selectedItems.has(clip.id) ? 'border-indigo-500 ring-1 ring-indigo-500 bg-indigo-500/5' : 'border-border'}`}>
+                    <GlowCard 
+                        className={`block p-0 gap-0 transition-all duration-300 ${selectedItems.has(clip.id) ? 'ring-1 ring-indigo-500' : ''}`}
+                        glowColor="purple"
+                        customSize={true}
+                    >
+                    <div className={`w-full h-full bg-card backdrop-blur-sm rounded-2xl overflow-hidden hover:shadow-2xl hover:shadow-indigo-500/10 cursor-pointer ${selectedItems.has(clip.id) ? 'bg-indigo-500/5' : ''}`}>
                     
                     {clip.type === 'image' && (
                         <div className="relative">
@@ -1023,6 +1029,7 @@ const handleUpdateGroup = async () => {
                         </div>
                     </div>
                     </div>
+                    </GlowCard>
 
                 </motion.div>
             ))}
