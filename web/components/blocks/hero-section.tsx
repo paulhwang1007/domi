@@ -1,6 +1,7 @@
 'use client';
 import React from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { ArrowRight, ChevronRight, Menu, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { AnimatedGroup } from '@/components/ui/animated-group'
@@ -106,8 +107,8 @@ export function HeroSection({ user }: HeroSectionProps) {
                     >
                         <img
                             className="h-full w-full object-cover object-left-top"
-                            src="https://tailark.com//_next/image?url=%2Fmail2.png&w=3840&q=75"
-                            alt="app screen"
+                            src="/dashboard-preview.png"
+                            alt="Domi Dashboard Preview"
                             width="2700"
                             height="1440"
                             draggable={false}
