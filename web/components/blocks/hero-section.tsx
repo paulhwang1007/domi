@@ -1,0 +1,239 @@
+'use client';
+import React from 'react'
+import Link from 'next/link'
+import Image from 'next/image'
+import { ArrowRight, ChevronRight, Menu, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { AnimatedGroup } from '@/components/ui/animated-group'
+import { ContainerScroll } from '@/components/ui/container-scroll-animation'
+import { cn } from '@/lib/utils'
+import { User } from '@supabase/supabase-js'
+import { ProfileDropdown } from '@/components/profile-dropdown'
+import { Variants, motion } from 'framer-motion'
+
+const transitionVariants = {
+    item: {
+        hidden: {
+            opacity: 0,
+            filter: 'blur(12px)',
+            y: 12,
+        },
+        visible: {
+            opacity: 1,
+            filter: 'blur(0px)',
+            y: 0,
+            transition: {
+                type: 'spring',
+                bounce: 0.3,
+                duration: 1.5,
+            },
+        },
+    },
+} as const;
+
+interface HeroSectionProps {
+    user: User | null;
+}
+
+export function HeroSection({ user }: HeroSectionProps) {
+    return (
+        <>
+            <HeroHeader user={user} />
+            <main className="overflow-hidden">
+                <div
+                    aria-hidden
+                    className="z-[2] absolute inset-0 pointer-events-none isolate opacity-50 contain-strict hidden lg:block">
+                    <div className="w-[35rem] h-[80rem] -translate-y-[350px] absolute left-0 top-0 -rotate-45 rounded-full bg-[radial-gradient(68.54%_68.72%_at_55.02%_31.46%,hsla(0,0%,85%,.08)_0,hsla(0,0%,55%,.02)_50%,hsla(0,0%,45%,0)_80%)]" />
+                    <div className="h-[80rem] absolute left-0 top-0 w-56 -rotate-45 rounded-full bg-[radial-gradient(50%_50%_at_50%_50%,hsla(0,0%,85%,.06)_0,hsla(0,0%,45%,.02)_80%,transparent_100%)] [translate:5%_-50%]" />
+                    <div className="h-[80rem] -translate-y-[350px] absolute left-0 top-0 w-56 -rotate-45 bg-[radial-gradient(50%_50%_at_50%_50%,hsla(0,0%,85%,.04)_0,hsla(0,0%,45%,.02)_80%,transparent_100%)]" />
+                </div>
+                <section className="relative w-full overflow-hidden pt-32">
+                    <ContainerScroll
+                        titleComponent={
+                            <div className="flex flex-col items-center justify-center">
+                                <AnimatedGroup variants={transitionVariants}>
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-indigo-300 mb-8 backdrop-blur-sm mx-auto">
+                                        <Link href="#link">
+                                            <span>Domi 1.0 is now live</span>
+                                        </Link>
+                                    </div>
+                        
+                                    <h1
+                                        className="mt-8 max-w-5xl mx-auto text-balance text-6xl md:text-7xl lg:mt-4 xl:text-[5.25rem] font-bold tracking-tight text-foreground">
+                                        The AI-Powered Memory <br /> for the <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-indigo-400 to-blue-400">Web</span>
+                                    </h1>
+                                    <p
+                                        className="mx-auto mt-8 max-w-2xl text-balance text-lg text-muted-foreground">
+                                        A powerful Chrome extension and web app to capture anything instantly, organize effortlessly with AI, and store for retrieval whenever you need it.
+                                    </p>
+                                </AnimatedGroup>
+
+                                <AnimatedGroup
+                                    variants={{
+                                        container: {
+                                            visible: {
+                                                transition: {
+                                                    staggerChildren: 0.05,
+                                                    delayChildren: 0.75,
+                                                },
+                                            },
+                                        },
+                                        ...transitionVariants,
+                                    }}
+                                    className="mt-12 flex flex-col items-center justify-center gap-2">
+                                    <div
+                                        key={1}
+                                        className="rounded-[14px]">
+                                        <Button
+                                            asChild
+                                            size="lg"
+                                            className="rounded-xl px-12 text-base bg-indigo-600 hover:bg-indigo-500 text-white font-semibold h-12 shadow-[0_0_40px_-10px_rgba(93,93,255,0.6)] w-full sm:w-[450px]">
+                                            {user ? (
+                                                <Link href="/dashboard">
+                                                    <span className="text-nowrap">Go to Dashboard</span>
+                                                    <ArrowRight className="ml-2 w-4 h-4" />
+                                                </Link>
+                                            ) : (
+                                                <Link href="/login">
+                                                    <span className="text-nowrap">Get started for free</span>
+                                                </Link>
+                                            )}
+                                        </Button>
+                                    </div>
+                                    <p className="mt-1 text-xs text-zinc-500 block w-full">No credit card required</p>
+                                </AnimatedGroup>
+                            </div>
+                        }
+                    >
+                        <img
+                            className="h-full w-full object-cover object-left-top"
+                            src="/dashboard-preview.png"
+                            alt="Domi Dashboard Preview"
+                            width="2700"
+                            height="1440"
+                            draggable={false}
+                        />
+                    </ContainerScroll>
+                </section>
+            </main>
+        </>
+    )
+}
+
+const menuItems = [
+    { name: 'Features', href: '#features' },
+    { name: 'How it works', href: '#how-it-works' },
+]
+
+const HeroHeader = ({ user }: { user: User | null }) => {
+    const [menuState, setMenuState] = React.useState(false)
+    const [isScrolled, setIsScrolled] = React.useState(false)
+
+    React.useEffect(() => {
+        const handleScroll = () => {
+            setIsScrolled(window.scrollY > 50)
+        }
+        window.addEventListener('scroll', handleScroll)
+        return () => window.removeEventListener('scroll', handleScroll)
+    }, [])
+    return (
+        <header>
+            <nav
+                data-state={menuState && 'active'}
+                className="fixed top-0 left-0 z-50 w-full px-2 group">
+                <div className={cn('mx-auto mt-2 max-w-6xl px-6 transition-all duration-300 lg:px-12 border border-transparent', isScrolled && 'bg-background/80 backdrop-blur-md max-w-4xl rounded-2xl border-border mt-4 shadow-sm lg:px-5')}>
+                    <div className="relative flex flex-wrap items-center justify-between gap-6 py-3 lg:gap-0 lg:py-4">
+                        <div className="flex w-full justify-between lg:w-auto">
+                            <Link
+                                href="/"
+                                aria-label="home"
+                                className="flex items-center space-x-2">
+                                <Logo />
+                            </Link>
+
+                            <button
+                                onClick={() => setMenuState(!menuState)}
+                                aria-label={menuState == true ? 'Close Menu' : 'Open Menu'}
+                                className="relative z-20 -m-2.5 -mr-4 block cursor-pointer p-2.5 lg:hidden">
+                                <Menu className="in-data-[state=active]:rotate-180 group-data-[state=active]:scale-0 group-data-[state=active]:opacity-0 m-auto size-6 duration-200" />
+                                <X className="group-data-[state=active]:rotate-0 group-data-[state=active]:scale-100 group-data-[state=active]:opacity-100 absolute inset-0 m-auto size-6 -rotate-180 scale-0 opacity-0 duration-200" />
+                            </button>
+                        </div>
+
+                        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden size-fit lg:block z-10">
+                            <ul className="flex gap-8 text-sm font-medium">
+                                {menuItems.map((item, index) => (
+                                    <li key={index}>
+                                        <Link
+                                            href={item.href}
+                                            className="text-muted-foreground hover:text-foreground block duration-150">
+                                            <span>{item.name}</span>
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        <div className="bg-background group-data-[state=active]:block lg:group-data-[state=active]:flex mb-6 hidden w-full flex-wrap items-center justify-end space-y-8 rounded-3xl border p-6 shadow-2xl shadow-zinc-300/20 md:flex-nowrap lg:m-0 lg:flex lg:w-fit lg:gap-6 lg:space-y-0 lg:border-transparent lg:bg-transparent lg:p-0 lg:shadow-none dark:shadow-none dark:lg:bg-transparent">
+                            <div className="lg:hidden">
+                                <ul className="space-y-6 text-base font-medium">
+                                    {menuItems.map((item, index) => (
+                                        <li key={index}>
+                                            <Link
+                                                href={item.href}
+                                                className="text-muted-foreground hover:text-foreground block duration-150">
+                                                <span>{item.name}</span>
+                                            </Link>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                            <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit">
+                                {user ? (
+                                    <ProfileDropdown user={user} />
+                                ) : (
+                                    <>
+                                        <Button
+                                            asChild
+                                            variant="outline"
+                                            size="sm"
+                                            className={cn(isScrolled && 'lg:hidden', 'border-white/10 text-white hover:bg-white/5 bg-transparent')}>
+                                            <Link href="/login">
+                                                <span>Login</span>
+                                            </Link>
+                                        </Button>
+                                        <Button
+                                            asChild
+                                            size="sm"
+                                            className={cn(isScrolled && 'lg:hidden', 'bg-indigo-600 hover:bg-indigo-500 text-white border-transparent')}>
+                                            <Link href="/login">
+                                                <span>Sign Up</span>
+                                            </Link>
+                                        </Button>
+                                        <Button
+                                            asChild
+                                            size="sm"
+                                            className={cn(isScrolled ? 'lg:inline-flex' : 'hidden', 'bg-indigo-600 hover:bg-indigo-500 text-white')}>
+                                            <Link href="/login">
+                                                <span>Get Started</span>
+                                            </Link>
+                                        </Button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </header>
+    )
+}
+
+const Logo = ({ className }: { className?: string }) => {
+    return (
+        <div className={cn('text-xl font-bold tracking-tighter flex items-center gap-2', className)}>
+           <img src="/domi_icon.png" alt="Domi Logo" className="w-8 h-8" />
+           <span className="text-xl font-bold bg-gradient-to-r from-violet-500 to-purple-500 bg-clip-text text-transparent">Domi</span>
+        </div>
+    )
+}
